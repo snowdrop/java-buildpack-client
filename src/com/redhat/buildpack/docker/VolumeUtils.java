@@ -1,10 +1,10 @@
 package com.redhat.buildpack.docker;
 
-import java.io.File;
-import java.io.IOException;
-
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.NotFoundException;
+
+import java.io.File;
+import java.io.IOException;
 
 public class VolumeUtils {
 

@@ -1,26 +1,19 @@
 package com.redhat.buildpack.docker;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.zip.GZIPOutputStream;
-
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Volume;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.zip.GZIPOutputStream;
 
 public class ContainerUtils {
 
@@ -37,7 +30,11 @@ public class ContainerUtils {
 
 		CreateContainerCmd ccc = dc.createContainerCmd(imageReference);
 		if (volumes != null) {
-			List<Bind> binds = Arrays.asList(volumes).stream().map(vb -> createBind(vb)).collect(Collectors.toList());
+			List<Bind> binds = new ArrayList<>();
+			for (VolumeBind vb : volumes) {
+				Bind bind = createBind(vb);
+				binds.add(bind);
+			}
 			ccc.getHostConfig().withBinds(binds);
 		}
 
@@ -60,20 +57,30 @@ public class ContainerUtils {
 		dc.removeContainerCmd(containerId).exec();
 	}
 
-	public static void addContentToContainer(DockerClient dc, String containerId,
-			ContainerEntry... entries) throws IOException {
-		addContentToContainer(dc, containerId, 0, 0, entries);
+	public static void addContentToContainer(DockerClient dc,
+											 String containerId,
+											 ContainerEntry... entries) throws IOException {
+		addContentToContainer(dc, containerId, "", 0, 0, entries);
 	}
 
-	public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer,
-			Integer userId, Integer groupId, File content) throws IOException {
-		addContentToContainer(dc, containerId, userId, groupId, ContainerEntry.fromFile(pathInContainer,content));
+	public static void addContentToContainer(DockerClient dc,
+											 String containerId,
+											 String pathInContainer,
+											 Integer userId,
+											 Integer groupId,
+											 File content) throws IOException {
+		addContentToContainer(dc, containerId, pathInContainer, userId, groupId, ContainerEntry.fromFile("",content));
 	}
 
-	public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer,
-			Integer userId, Integer groupId, String name, String content) throws IOException {
-		addContentToContainer(dc, containerId, userId, groupId,
-				ContainerEntry.fromString(pathInContainer+"/"+name, content));
+	public static void addContentToContainer(DockerClient dc,
+											 String containerId,
+											 String pathInContainer,
+											 Integer userId,
+											 Integer groupId,
+											 String name,
+											 String content) throws IOException {
+		addContentToContainer(dc, containerId, pathInContainer, userId, groupId,
+				ContainerEntry.fromString(name, content));
 	}
 
 	/**
@@ -91,6 +98,7 @@ public class ContainerUtils {
 				//add parents of this FIRST
 				addParents(tout,seenDirs,uid,gid,parent);	
 
+				//System.out.println("Adding entry '"+parent+"/'");
 				//and then add this =)
 				TarArchiveEntry tae = new TarArchiveEntry(parent+"/");
 				tae.setSize(0);
@@ -105,8 +113,12 @@ public class ContainerUtils {
 	/**
 	 * Adds content to the container, with specified uid/gid 
 	 */
-	public static void addContentToContainer(DockerClient dc, String containerId,
-			Integer userId, Integer groupId, ContainerEntry... entries) throws IOException {
+	public static void addContentToContainer(DockerClient dc,
+											 String containerId,
+											 String pathInContainer,
+											 Integer userId,
+											 Integer groupId,
+											 ContainerEntry... entries) throws IOException {
 		int uid = 0;
 		int gid = 0;
 		if (userId != null) {
@@ -116,7 +128,13 @@ public class ContainerUtils {
 			gid = groupId;
 		}
 
-		Set<String> seenDirs = new HashSet<String>();
+		Set<String> seenDirs = new HashSet<>();
+		//Don't add entry for "/", causes issues with tar format. 
+		seenDirs.add("");
+
+		if(!pathInContainer.isEmpty() && pathInContainer.endsWith("/")){
+			pathInContainer = pathInContainer.substring(0,pathInContainer.length()-1);
+		}
 
 		//TODO: currently this is reading in the entire content into the PipedInputStream, before it 
 		//      is fed back out into the TarArchiveOutputStream, this is bad, it consumes memory 
@@ -128,9 +146,15 @@ public class ContainerUtils {
 		TarArchiveOutputStream tout = new TarArchiveOutputStream(new GZIPOutputStream(new BufferedOutputStream(out)));
 		tout.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
 		for (ContainerEntry ve : entries) {
-			String path = ve.getPath();
+
+			String entryPath = ve.getPath();
+			if(entryPath.startsWith("/")) entryPath = entryPath.substring(1);
+			String path = pathInContainer+"/"+entryPath;
+
 			addParents(tout,seenDirs,uid,gid,path);
-			TarArchiveEntry tae = new TarArchiveEntry(ve.getPath());
+
+			//System.out.println("Adding entry '"+ve.getPath()+"'");
+			TarArchiveEntry tae = new TarArchiveEntry(path);
 			tae.setSize(ve.getSize());
 			tae.setUserId(uid);
 			tae.setGroupId(gid);
