@@ -110,6 +110,9 @@ public class BuildPackBuilderImpl implements BuildPackBuilder{
 		this.applicationContent.addLast(ContainerEntry.fromStream(filepath, length, filecontent));
 		return this;
 	}
+	public BuildPackBuilder withContent(File content) throws Exception{
+		return this.withContent("",content);
+	}	
 	public BuildPackBuilder withContent(String prefix, File content) throws Exception{
 		ContainerEntry[] entries = ContainerEntry.fromFile(prefix, content);
 		if(entries!=null) {
