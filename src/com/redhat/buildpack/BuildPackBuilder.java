@@ -24,14 +24,12 @@ public interface BuildPackBuilder {
     BuildPackBuilder withEnv(Map<String, String> environment);
 
     BuildPackBuilder withDockerHost(String dockerHost);
+    BuildPackBuilder useDockerDaemon(boolean useDaemon);    
 
     BuildPackBuilder withContent(String prefix, File content) throws Exception;
     BuildPackBuilder withContent(String filepath, String filecontent);
     BuildPackBuilder withContent(String filepath, long length, InputStream filecontent) throws Exception;
     BuildPackBuilder withContent(ContainerEntry... entries) throws Exception;
-
-
-    BuildPackBuilder useDockerDaemon(boolean useDaemon);
 
     BuildPackBuilder withBuildCache(String cacheVolume);
     BuildPackBuilder removeBuildCacheAfterBuild(boolean remove);
