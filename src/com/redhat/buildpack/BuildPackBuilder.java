@@ -34,6 +34,7 @@ public interface BuildPackBuilder {
     BuildPackBuilder useDockerDaemon(boolean useDaemon);    
 
     //application content specification
+    BuildPackBuilder withContent(File content) throws Exception;    
     BuildPackBuilder withContent(String prefix, File content) throws Exception;
     BuildPackBuilder withContent(String filepath, String filecontent);
     BuildPackBuilder withContent(String filepath, long length, InputStream filecontent) throws Exception;

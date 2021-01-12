@@ -11,7 +11,7 @@ public class TestDriver {
 	public TestDriver() throws Exception {
 
 		BuildPackBuilder.get()
-			.withContent("",new File("/home/ozzy/Work/java-buildpack-client"))
+			.withContent(new File("/home/ozzy/Work/java-buildpack-client"))
 			.withFinalImage("test/testimage:latest")
 			.build();
 

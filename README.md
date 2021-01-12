@@ -10,10 +10,10 @@ of the build to be performed.
 
 A very simple build can be performed with as little as.. 
 ```
-		BuildPackBuilder.get()
-			.withContent("",new File("/home/user/java-project"))
-			.withFinalImage("test/testimage:latest")
-			.build();
+BuildPackBuilder.get()
+    .withContent(new File("/home/user/java-project"))
+    .withFinalImage("test/testimage:latest")
+    .build();
 ```
 
 This will use the default builder image from (https://packeto.io) to handle the build
