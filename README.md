@@ -20,6 +20,8 @@ This will use the default builder image from (https://packeto.io) to handle the 
 of the project in the `/home/user/java-project` folder. The resulting image will 
 be stored in the local docker daemon as `test/testimage:latest`
 
+## Overview
+
 The [`BuildPackBuilder`](src/com/redhat/buildpack/BuildPackBuilder.java) offers other configuration methods to customise behavior. 
 
 - run/build Image can be specified
@@ -52,7 +54,7 @@ Alternatively, dockerHost can be directly configured on the builder itself. If t
 docker socket is extracted and used during the build phase. If unset, this defaults to `/var/run/docker/sock`
 
 
-FAQ:
+## FAQ:
 
 **Will this work with Podman?:**
 
