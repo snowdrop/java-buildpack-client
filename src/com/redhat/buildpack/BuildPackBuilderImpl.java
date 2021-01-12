@@ -29,6 +29,9 @@ public class BuildPackBuilderImpl implements BuildPackBuilder{
 	private String buildImage = "paketobuildpacks/builder:base";
 	private String runImage = null;
 	private String finalImage = null;
+
+	private int pullTimeoutSeconds = 60;
+
 	private String dockerHost = null;
 	private DockerClient dc;
 	
@@ -68,6 +71,7 @@ public class BuildPackBuilderImpl implements BuildPackBuilder{
 			this.removeLaunchCacheAfterBuild = bpi.removeLaunchCacheAfterBuild;
 			this.logLevel = bpi.logLevel;
 			this.useTimestamps = bpi.useTimestamps;
+			this.pullTimeoutSeconds = bpi.pullTimeoutSeconds;
 		}
 		return this;
 	}
@@ -141,6 +145,10 @@ public class BuildPackBuilderImpl implements BuildPackBuilder{
 		this.removeLaunchCacheAfterBuild = remove;
 		return this;
 	}
+	public BuildPackBuilder withPullTimeout(int seconds){
+		this.pullTimeoutSeconds = seconds;
+		return this;
+	}
 
     public BuildPackBuilder withLogLevel(String logLevel){
 		this.logLevel = logLevel;
@@ -164,10 +172,16 @@ public class BuildPackBuilderImpl implements BuildPackBuilder{
 			}
 			@Override
 			public void stdout(String message){
+				if(message.endsWith("\n")){
+					message = message.substring(0,message.length()-1);
+				}
 				System.out.println(message);
 			}
 			@Override
 			public void stderr(String message){
+				if(message.endsWith("\n")){
+					message = message.substring(0,message.length()-1);
+				}				
 				System.err.println(message);
 			}
 		};
@@ -278,7 +292,8 @@ public class BuildPackBuilderImpl implements BuildPackBuilder{
 	}
 
 	private void prep() throws Exception {
-		ImageUtils.pullImages(dc, buildImage);
+
+		ImageUtils.pullImages(dc, pullTimeoutSeconds, buildImage);
 		ImageInfo ii = ImageUtils.inspectImage(dc,buildImage);
 		
 		//read the userid/groupid for the buildpack from it's env.
@@ -315,7 +330,7 @@ public class BuildPackBuilderImpl implements BuildPackBuilder{
 		}
 
 		//pull the runImage.
-		ImageUtils.pullImages(dc, runImage);
+		ImageUtils.pullImages(dc, pullTimeoutSeconds, runImage);
 	}
 
 	private String getValue(JsonNode root, String path) {

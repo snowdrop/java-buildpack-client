@@ -22,12 +22,15 @@ public class ImageUtils {
 	/**
 	 * Util method to pull images if they don't exist to the local docker yet.
 	 */
-	public static void pullImages(DockerClient dc, String... imageNames) throws InterruptedException {
+	public static void pullImages(DockerClient dc, int timeoutSeconds, String... imageNames) throws InterruptedException {
 		Set<String> imageNameSet = new HashSet<>(Arrays.asList(imageNames));
 
 		//list the current known images
 		List<Image> li = dc.listImagesCmd().exec();
 		for(Image i: li) {
+			if (i.getRepoTags() == null) {
+				continue;
+			}
 			for(String it : i.getRepoTags()) {
 				if(imageNameSet.contains(it)) {
 					imageNameSet.remove(it);
@@ -52,7 +55,7 @@ public class ImageUtils {
 
 		//wait for pulls to complete.
 		for(PullImageResultCallback pirc : pircs) {
-			pirc.awaitCompletion(30, TimeUnit.SECONDS);
+			pirc.awaitCompletion(timeoutSeconds, TimeUnit.SECONDS);
 		}
 
 		//TODO: progress tracking.. 
