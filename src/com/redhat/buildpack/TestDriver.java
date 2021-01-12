@@ -9,21 +9,12 @@ import com.redhat.buildpack.docker.VolumeUtils;
 public class TestDriver {
 		
 	public TestDriver() throws Exception {
-		BuildPackBuilder bp = new BuildPackBuilder(
-				//buildImage to use.
-				"gcr.io/paketo-buildpacks/builder:base-platform-api-0.3",
-				//runImage will be obtained from buildImage metadata.	
-				null, 
-				//targetImage to create
-				"test/testimage:latest",
-				//projectSource location.
-				new File("C:\\git\\demo-project")
-				);
 
-		//pull build image, read metadata etc.				
-		bp.prep();
-		//execute build.
-		bp.build();
+		BuildPackBuilder.get()
+			.withContent("",new File("/home/ozzy/Work/java-buildpack-client"))
+			.withFinalImage("test/testimage:latest")
+			.build();
+
 	}
 		
 	public static void main(String[] args) throws Exception {

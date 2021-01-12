@@ -1,12 +1,7 @@
 package com.redhat.buildpack.docker;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,9 +11,9 @@ import java.util.List;
  * (eg, String as a test content, or programmatic supply via future i/f)
  */
 public interface ContainerEntry {
-	String getPath();
-	long getSize() throws IOException;
-	InputStream getContent() throws IOException;
+	public String getPath();
+	public long getSize() throws IOException;
+	public InputStream getContent() throws IOException;
 	
 	/**
 	 * build a container entry from a string, to be present in the container at /path
@@ -37,6 +32,23 @@ public interface ContainerEntry {
 			public InputStream getContent() throws IOException {
 				return new ByteArrayInputStream(content.getBytes());
 			}
+		};
+	}
+
+	static ContainerEntry fromStream(String name, long length, InputStream data){
+		return new ContainerEntry() {
+			@Override
+			public long getSize() throws IOException {
+				return length;
+			}
+			@Override
+			public String getPath() {
+				return name;
+			}	
+			@Override
+			public InputStream getContent() throws IOException {
+				return data;
+			}	
 		};
 	}
 	
