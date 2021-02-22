@@ -53,6 +53,60 @@ The builder will use docker via the `DOCKER_HOST` env var, if configured, or via
 Alternatively, dockerHost can be directly configured on the builder itself. If the docker host starts with `unix://` the path to the
 docker socket is extracted and used during the build phase. If unset, this defaults to `/var/run/docker/sock`
 
+## How To:
+
+Want to try out this project? well, it's not in maven central yet, and the packages/api are not fixed in stone yet, so be aware! But here are the basic steps to get you up and running. 
+
+1. Add Jitpack.io repository to your project's pom. 
+```
+	<repositories>
+		<repository>
+		    <id>jitpack.io</id>
+		    <url>https://jitpack.io</url>
+		</repository>
+	</repositories>
+```
+
+2. Add this project as a dependency via jitpack. 
+```
+        <dependency>
+            <groupId>com.github.bardweller</groupId>
+            <artifactId>java-buildpack-client</artifactId>
+            <version>-SNAPSHOT</version>
+        </dependency> 
+```
+
+3. Instantiate a BuildPackBuilder
+```
+    BuildPackBuilder bpb = BuildPackBuilder.get();
+```
+
+4. Define the content to be built..
+```
+    bpb = bpb.withContent(new File("/path/to/the/project/to/build));
+```
+
+5. Configure the name/tags for the image to create
+```
+    bpb = bpb.withFinalImage("myorg/myimage:mytag");
+```
+
+6. Invoke the build
+```
+    bpb.build();
+```
+
+Or.. combine all the above steps into a single callchain.. 
+```
+BuildPackBuilder.get()
+    .withContent(new File("/path/to/the/project/to/build))
+    .withFinalImage("myorg/myimage:mytag")
+    .build();
+```
+
+There are many more ways to customize & configure the BuildPackBuilder, take a look at the [interface](src/com/redhat/buildpack/BuildPackBuilder.java) to see everything thats currently possible. 
+
+Most likely if you are using this to integrate to existing tooling, you will want to supply a custom LogReader to receive the messages output by BuildPacks during the build. You may also want to associate cache names to a project, to enable faster rebuilds for a given project. 
 
 ## FAQ:
 
