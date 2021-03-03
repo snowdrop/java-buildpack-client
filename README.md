@@ -22,7 +22,7 @@ be stored in the local docker daemon as `test/testimage:latest`
 
 ## Overview
 
-The [`BuildPackBuilder`](src/com/redhat/buildpack/BuildPackBuilder.java) offers other configuration methods to customise behavior. 
+The [`BuildPackBuilder`](src/main/java/dev/snowdrop/buildpack/BuildPackBuilder.java) offers other configuration methods to customise behavior. 
 
 - run/build Image can be specified
 - docker socket location can be configured
@@ -41,7 +41,7 @@ passed, allowing for sparse source directories, or multiple project dirs to be c
 - File/Directory, with prefix. Eg, take this directory /home/fish/wibble, and make it appear in the application content as /prodcode
 - String Content, with path. Eg, take this String content "FISH" and make it appear in the application content as /prodcode/fish.txt
 - InputStream Content, with path. Similar to String, except with data pulled from an InputStream.
-- [`ContainerEntry`](src/com/redhat/buildpack/docker/ContainerEntry.java) interface, for custom integration.
+- [`ContainerEntry`](src/main/java/dev/snowdrop/buildpack/docker/ContainerEntry.java) interface, for custom integration.
 
 Output from the Builpack execution is available via the `BuildPackBuilder.LogReader` interface, which can be optionally be passed 
 to the `build` invocation. The `build` signature that doesn't accept a `LogReader` supplies it's own default reader that will pass
@@ -104,7 +104,7 @@ BuildPackBuilder.get()
     .build();
 ```
 
-There are many more ways to customize & configure the BuildPackBuilder, take a look at the [interface](src/com/redhat/buildpack/BuildPackBuilder.java) to see everything thats currently possible. 
+There are many more ways to customize & configure the BuildPackBuilder, take a look at the [interface](src/main/java/dev/snowdrop/buildpack/BuildPackBuilder.java) to see everything thats currently possible. 
 
 Most likely if you are using this to integrate to existing tooling, you will want to supply a custom LogReader to receive the messages output by BuildPacks during the build. You may also want to associate cache names to a project, to enable faster rebuilds for a given project. 
 
