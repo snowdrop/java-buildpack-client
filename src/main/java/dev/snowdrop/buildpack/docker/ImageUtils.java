@@ -66,7 +66,6 @@ public class ImageUtils {
    */
   public static ImageInfo inspectImage(DockerClient dc, String imageName) {
     InspectImageResponse iir = dc.inspectImageCmd(imageName).exec();
-    iir.getConfig().getLabels();
     // today we just keep the id/labels/env, can expand if needed.
     ImageInfo ii = new ImageInfo();
     ii.id = iir.getId();

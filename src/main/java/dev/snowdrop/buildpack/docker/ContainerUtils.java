@@ -22,6 +22,8 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Volume;
 
+import dev.snowdrop.buildpack.docker.ContainerEntry.ContentSupplier;
+
 public class ContainerUtils {
 
   public static String createContainer(DockerClient dc, String imageReference, VolumeBind... volumes) {
@@ -96,6 +98,7 @@ public class ContainerUtils {
         // add parents of this FIRST
         addParents(tout, seenDirs, uid, gid, parent);
 
+        //System.out.println("adding "+parent+"/");
         // and then add this =)
         TarArchiveEntry tae = new TarArchiveEntry(parent + "/");
         tae.setSize(0);
@@ -137,6 +140,11 @@ public class ContainerUtils {
             for (ContainerEntry ve : entries) {
               // prefix the entry path with the pathInContainer value.
               String entryPath = ve.getPath();
+              
+              if(entryPath==null || entryPath.isEmpty()) {
+                throw new IOException("Error path was empty");
+              }
+              
               if (entryPath.startsWith("/"))
                 entryPath = entryPath.substring(1);
               String pathWithEntry = path + "/" + entryPath;
@@ -144,21 +152,29 @@ public class ContainerUtils {
               // important! adds the parent dirs for the entries with the correct uid/gid.
               // (otherwise various buildpack tasks won't be able to write to them!)
               addParents(tout, seenDirs, uid, gid, pathWithEntry);
-
+              
+              //System.out.println("adding "+pathWithEntry);
               // add this file entry.
               TarArchiveEntry tae = new TarArchiveEntry(pathWithEntry);
               tae.setSize(ve.getSize());
               tae.setUserId(uid);
               tae.setGroupId(gid);
               tout.putArchiveEntry(tae);
+              ContentSupplier cs = ve.getContentSupplier();
+              if(cs==null) {
+                throw new IOException("Error ContentSupplier was not provided");
+              }
               try (InputStream is = ve.getContentSupplier().getData();) {
+                if(is==null) {
+                  throw new IOException("Error ContentSupplier gave null for getData");
+                }
                 is.transferTo(tout);
               }
               tout.closeArchiveEntry();
             }
           } catch (IOException e) {
             writerException.set(e);
-            throw new RuntimeException(e);
+            //throw new RuntimeException(e);
           }
         }
       };
