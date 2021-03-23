@@ -9,6 +9,7 @@ import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.GZIPOutputStream;
@@ -25,6 +26,7 @@ import com.github.dockerjava.api.model.Volume;
 import dev.snowdrop.buildpack.docker.ContainerEntry.ContentSupplier;
 
 public class ContainerUtils {
+  private static final Logger log = Logger.getLogger(ContainerUtils.class.getName());
 
   public static String createContainer(DockerClient dc, String imageReference, VolumeBind... volumes) {
     return createContainer(dc, imageReference, null, volumes);
@@ -98,7 +100,7 @@ public class ContainerUtils {
         // add parents of this FIRST
         addParents(tout, seenDirs, uid, gid, parent);
 
-        //System.out.println("adding "+parent+"/");
+        log.finer("adding "+parent+"/");
         // and then add this =)
         TarArchiveEntry tae = new TarArchiveEntry(parent + "/");
         tae.setSize(0);
@@ -153,7 +155,7 @@ public class ContainerUtils {
               // (otherwise various buildpack tasks won't be able to write to them!)
               addParents(tout, seenDirs, uid, gid, pathWithEntry);
               
-              //System.out.println("adding "+pathWithEntry);
+              log.finer("adding "+pathWithEntry);
               // add this file entry.
               TarArchiveEntry tae = new TarArchiveEntry(pathWithEntry);
               tae.setSize(ve.getSize());
@@ -174,7 +176,6 @@ public class ContainerUtils {
             }
           } catch (IOException e) {
             writerException.set(e);
-            //throw new RuntimeException(e);
           }
         }
       };

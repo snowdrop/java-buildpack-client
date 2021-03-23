@@ -10,7 +10,7 @@ of the build to be performed.
 
 A very simple build can be performed with as little as.. 
 ```
-BuildPackBuilder.get()
+BuildpackBuilder.get()
     .withContent(new File("/home/user/java-project"))
     .withFinalImage("test/testimage:latest")
     .build();
@@ -22,7 +22,7 @@ be stored in the local docker daemon as `test/testimage:latest`
 
 ## Overview
 
-The [`BuildPackBuilder`](src/main/java/dev/snowdrop/buildpack/BuildPackBuilder.java) offers other configuration methods to customise behavior. 
+The [`BuildpackBuilder`](src/main/java/dev/snowdrop/buildpack/BuildpackBuilder.java) offers other configuration methods to customise behavior. 
 
 - run/build Image can be specified
 - docker socket location can be configured
@@ -43,7 +43,7 @@ passed, allowing for sparse source directories, or multiple project dirs to be c
 - InputStream Content, with path. Similar to String, except with data pulled from an InputStream.
 - [`ContainerEntry`](src/main/java/dev/snowdrop/buildpack/docker/ContainerEntry.java) interface, for custom integration.
 
-Output from the Builpack execution is available via the `BuildPackBuilder.LogReader` interface, which can be optionally be passed 
+Output from the Builpack execution is available via the `BuildpackBuilder.LogReader` interface, which can be optionally be passed 
 to the `build` invocation. The `build` signature that doesn't accept a `LogReader` supplies it's own default reader that will pass
 messages to stdout/stderr.
 
@@ -76,9 +76,9 @@ Want to try out this project? well, it's not in maven central yet, and the packa
         </dependency> 
 ```
 
-3. Instantiate a BuildPackBuilder
+3. Instantiate a BuildpackBuilder
 ```
-    BuildPackBuilder bpb = BuildPackBuilder.get();
+    BuildpackBuilder bpb = BuildpackBuilder.get();
 ```
 
 4. Define the content to be built..
@@ -98,13 +98,13 @@ Want to try out this project? well, it's not in maven central yet, and the packa
 
 Or.. combine all the above steps into a single callchain.. 
 ```
-BuildPackBuilder.get()
+BuildpackBuilder.get()
     .withContent(new File("/path/to/the/project/to/build))
     .withFinalImage("myorg/myimage:mytag")
     .build();
 ```
 
-There are many more ways to customize & configure the BuildPackBuilder, take a look at the [interface](src/main/java/dev/snowdrop/buildpack/BuildPackBuilder.java) to see everything thats currently possible. 
+There are many more ways to customize & configure the BuildpackBuilder, take a look at the [interface](src/main/java/dev/snowdrop/buildpack/BuildpackBuilder.java) to see everything thats currently possible. 
 
 Most likely if you are using this to integrate to existing tooling, you will want to supply a custom LogReader to receive the messages output by BuildPacks during the build. You may also want to associate cache names to a project, to enable faster rebuilds for a given project. 
 

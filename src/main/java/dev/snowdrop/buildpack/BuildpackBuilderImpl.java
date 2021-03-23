@@ -6,6 +6,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Random;
 
@@ -27,15 +28,19 @@ import dev.snowdrop.buildpack.docker.ImageUtils.ImageInfo;
 import dev.snowdrop.buildpack.docker.VolumeBind;
 import dev.snowdrop.buildpack.docker.VolumeUtils;
 
-public class BuildPackBuilderImpl implements BuildPackBuilder {
+public class BuildpackBuilderImpl implements BuildpackBuilder {
+  private static final Logger log = Logger.getLogger(BuildpackBuilderImpl.class.getName());
+
   private final String PLATFORM_API_VERSION = "0.5";
 
+  //paths we use for mountpoints within build container.
   private final String BUILD_VOL_PATH = "/bld";
   private final String LAUNCH_VOL_PATH = "/launch";
   private final String APP_VOL_PATH = "/app";
   private final String OUTPUT_VOL_PATH = "/out";
   private final String ENV_VOL_PATH = "/env";
 
+  //defaults for images
   private String buildImage = "paketobuildpacks/builder:base";
   private String runImage = null;
   private String finalImage = null;
@@ -60,13 +65,13 @@ public class BuildPackBuilderImpl implements BuildPackBuilder {
   Map<String, String> environment = new HashMap<>();
   LinkedList<ContainerEntry> applicationContent = new LinkedList<>();
 
-  public BuildPackBuilderImpl() {
+  public BuildpackBuilderImpl() {
     dc = DockerClientUtils.getDockerClient();
   }
 
-  public BuildPackBuilder fromBuilder(BuildPackBuilder builder) {
-    if (builder instanceof BuildPackBuilderImpl) {
-      BuildPackBuilderImpl bpi = (BuildPackBuilderImpl) builder;
+  public BuildpackBuilder fromBuilder(BuildpackBuilder builder) {
+    if (builder instanceof BuildpackBuilderImpl) {
+      BuildpackBuilderImpl bpi = (BuildpackBuilderImpl) builder;
       this.buildImage = bpi.buildImage;
       this.runImage = bpi.runImage;
       this.finalImage = bpi.finalImage;
@@ -86,33 +91,33 @@ public class BuildPackBuilderImpl implements BuildPackBuilder {
     return this;
   }
 
-  public BuildPackBuilder withRunImage(String image) {
+  public BuildpackBuilder withRunImage(String image) {
     this.runImage = image;
     return this;
   }
 
-  public BuildPackBuilder withBuildImage(String image) {
+  public BuildpackBuilder withBuildImage(String image) {
     this.buildImage = image;
     return this;
   }
 
-  public BuildPackBuilder withEnv(String key, String value) {
+  public BuildpackBuilder withEnv(String key, String value) {
     this.environment.put(key, value);
     return this;
   }
 
-  public BuildPackBuilder withEnv(Map<String, String> environment) {
+  public BuildpackBuilder withEnv(Map<String, String> environment) {
     this.environment.putAll(environment);
     return this;
   }
 
-  public BuildPackBuilder withDockerHost(String dockerHost) {
+  public BuildpackBuilder withDockerHost(String dockerHost) {
     this.dockerHost = dockerHost;
     this.dc = DockerClientUtils.getDockerClient(dockerHost);
     return this;
   }
 
-  public BuildPackBuilder withContent(String filepath, String filecontent) {
+  public BuildpackBuilder withContent(String filepath, String filecontent) {
     try {
       this.applicationContent.addLast(ContainerEntry.fromString(filepath, filecontent));
     } catch (Exception e) {
@@ -121,16 +126,16 @@ public class BuildPackBuilderImpl implements BuildPackBuilder {
     return this;
   }
 
-  public BuildPackBuilder withContent(String filepath, long length, ContentSupplier content) throws Exception {
+  public BuildpackBuilder withContent(String filepath, long length, ContentSupplier content) throws Exception {
     this.applicationContent.addLast(ContainerEntry.fromStream(filepath, length, content));
     return this;
   }
 
-  public BuildPackBuilder withContent(File content) throws Exception {
+  public BuildpackBuilder withContent(File content) throws Exception {
     return this.withContent("", content);
   }
 
-  public BuildPackBuilder withContent(String prefix, File content) throws Exception {
+  public BuildpackBuilder withContent(String prefix, File content) throws Exception {
     ContainerEntry[] entries = ContainerEntry.fromFile(prefix, content);
     if (entries != null) {
       for (ContainerEntry ce : entries) {
@@ -140,60 +145,61 @@ public class BuildPackBuilderImpl implements BuildPackBuilder {
     return this;
   }
 
-  public BuildPackBuilder withContent(ContainerEntry... entries) throws Exception {
+  public BuildpackBuilder withContent(ContainerEntry... entries) throws Exception {
     for (ContainerEntry ce : entries) {
       this.applicationContent.addLast(ce);
     }
     return this;
   }
 
-  public BuildPackBuilder useDockerDaemon(boolean useDaemon) {
+  public BuildpackBuilder useDockerDaemon(boolean useDaemon) {
     this.useDaemon = useDaemon;
     return this;
   }
 
-  public BuildPackBuilder withBuildCache(String cacheVolume) {
+  public BuildpackBuilder withBuildCache(String cacheVolume) {
     this.buildCacheVolumeName = cacheVolume;
     return this;
   }
 
-  public BuildPackBuilder removeBuildCacheAfterBuild(boolean remove) {
+  public BuildpackBuilder removeBuildCacheAfterBuild(boolean remove) {
     this.removeBuildCacheAfterBuild = remove;
     return this;
   }
 
-  public BuildPackBuilder withLaunchCache(String cacheVolume) {
+  public BuildpackBuilder withLaunchCache(String cacheVolume) {
     this.launchCacheVolumeName = cacheVolume;
     return this;
   }
 
-  public BuildPackBuilder removeLaunchCacheAfterBuild(boolean remove) {
+  public BuildpackBuilder removeLaunchCacheAfterBuild(boolean remove) {
     this.removeLaunchCacheAfterBuild = remove;
     return this;
   }
 
-  public BuildPackBuilder withPullTimeout(int seconds) {
+  public BuildpackBuilder withPullTimeout(int seconds) {
     this.pullTimeoutSeconds = seconds;
     return this;
   }
 
-  public BuildPackBuilder withLogLevel(String logLevel) {
+  public BuildpackBuilder withLogLevel(String logLevel) {
     this.logLevel = logLevel;
     return this;
   }
 
-  public BuildPackBuilder requestBuildTimestamps(boolean timestampsEnabled) {
+  public BuildpackBuilder requestBuildTimestamps(boolean timestampsEnabled) {
     this.useTimestamps = timestampsEnabled;
     return this;
   }
 
-  public BuildPackBuilder withFinalImage(String image) {
+  public BuildpackBuilder withFinalImage(String image) {
     this.finalImage = image;
     return this;
   }
 
   public int build() throws Exception {
-    BuildPackBuilder.LogReader system = new BuildPackBuilder.LogReader() {
+    //Send logs to stdout/stderr if no logger configured. 
+    BuildpackBuilder.LogReader system = new BuildpackBuilder.LogReader() {
       @Override
       public boolean stripAnsiColor() {
         return true;
@@ -237,11 +243,19 @@ public class BuildPackBuilderImpl implements BuildPackBuilder {
 
     // configure our call to 'creator' which will do all the work.
     String[] xargs = { "bash", "-c", "ls -alR /app" };
-    String[] args = { "/cnb/lifecycle/creator", "-uid", "" + userId, "-gid", "" + groupId, "-cache-dir", BUILD_VOL_PATH,
-        "-app", APP_VOL_PATH + "/content", "-layers", OUTPUT_VOL_PATH, "-platform", ENV_VOL_PATH, "-run-image",
-        runImage, "-launch-cache", LAUNCH_VOL_PATH, "-daemon", // TODO: non daemon
-        // support.
-        "-log-level", this.logLevel, "-skip-restore", finalImage };
+
+    String[] args = { "/cnb/lifecycle/creator", 
+                      "-uid", "" + userId, 
+                      "-gid", "" + groupId, 
+                      "-cache-dir", BUILD_VOL_PATH,
+                      "-app", APP_VOL_PATH + "/content", 
+                      "-layers", OUTPUT_VOL_PATH, 
+                      "-platform", ENV_VOL_PATH, 
+                      "-run-image", runImage, 
+                      "-launch-cache", LAUNCH_VOL_PATH, 
+                      "-daemon", // TODO: non daemon support.
+                      "-log-level", this.logLevel, 
+                      "-skip-restore", finalImage };
 
     // TODO: read metadata from buildImage to confirm lifecycle version/platform
     // version compatibility.
@@ -260,13 +274,12 @@ public class BuildPackBuilderImpl implements BuildPackBuilder {
         new VolumeBind(applicationVolume, APP_VOL_PATH), new VolumeBind(dockerSocket, "/var/run/docker.sock"),
         new VolumeBind(outputVolume, OUTPUT_VOL_PATH));
 
-    // info prints.. remove later =)
-    System.out.println("mounted " + buildCacheVolume + " at " + BUILD_VOL_PATH);
-    System.out.println("mounted " + launchCacheVolume + " at " + LAUNCH_VOL_PATH);
-    System.out.println("mounted " + applicationVolume + " at " + APP_VOL_PATH);
-    System.out.println("mounted " + dockerSocket + " at " + "/var/run/docker.sock");
-    System.out.println("mounted " + outputVolume + " at " + OUTPUT_VOL_PATH);
-    System.out.println("container id " + id);
+    log.info("mounted " + buildCacheVolume + " at " + BUILD_VOL_PATH);
+    log.info("mounted " + launchCacheVolume + " at " + LAUNCH_VOL_PATH);
+    log.info("mounted " + applicationVolume + " at " + APP_VOL_PATH);
+    log.info("mounted " + dockerSocket + " at " + "/var/run/docker.sock");
+    log.info("mounted " + outputVolume + " at " + OUTPUT_VOL_PATH);
+    log.info("container id " + id);
 
     // TODO: add environment volume content from caller (add to method args)
     // VolumeUtils.addContentToVolume(dc, envVolume, "env/CNB_SKIP_LAYERS", "true");
@@ -278,18 +291,22 @@ public class BuildPackBuilderImpl implements BuildPackBuilder {
     // but subdirs are ok.
     ContainerEntry[] entries = applicationContent.toArray(new ContainerEntry[0]);
     ContainerUtils.addContentToContainer(dc, id, APP_VOL_PATH + "/content", userId, groupId, entries);
-    System.out.println("uploaded archive to container at " + APP_VOL_PATH + "/content");
+    log.info("uploaded archive to container at " + APP_VOL_PATH + "/content");
 
     // launch the container!
     dc.startContainerCmd(id).exec();
 
     // grab the logs to stdout.
-    dc.logContainerCmd(id).withFollowStream(true).withStdOut(true).withStdErr(true).withTimestamps(this.useTimestamps)
-        .exec(new ContainerLogReader(logger));
+    dc.logContainerCmd(id)
+      .withFollowStream(true)
+      .withStdOut(true)
+      .withStdErr(true)
+      .withTimestamps(this.useTimestamps)
+      .exec(new ContainerLogReader(logger));
 
     // wait for the container to complete, and retrieve the exit code.
     int rc = dc.waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
-    System.out.println("Build exited with code " + rc);
+    log.info("Build exited with code " + rc);
 
     // tidy up. remove container.
     ContainerUtils.removeContainer(dc, id);
@@ -344,7 +361,7 @@ public class BuildPackBuilderImpl implements BuildPackBuilder {
           ri = "docker.io/" + ri;
         }
         runImage = ri;
-        System.out.println("Got builder specified ri " + ri);
+        log.info("Using builder specified runImage " + ri);
       }
     }
 
@@ -368,10 +385,10 @@ public class BuildPackBuilderImpl implements BuildPackBuilder {
   // the logger
   // we strip ansi color escape sequences for clarity.
   private static class ContainerLogReader extends ResultCallback.Adapter<Frame> {
-    private final BuildPackBuilder.LogReader logger;
+    private final BuildpackBuilder.LogReader logger;
     private boolean stripColor;
 
-    public ContainerLogReader(BuildPackBuilder.LogReader logger) {
+    public ContainerLogReader(BuildpackBuilder.LogReader logger) {
       this.logger = logger;
       this.stripColor = this.logger.stripAnsiColor();
     }

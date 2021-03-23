@@ -8,7 +8,10 @@ import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
 import org.apache.commons.lang.SystemUtils;
 
+import java.util.logging.Logger;
+
 public class DockerClientUtils {
+  private static final Logger log = Logger.getLogger(DockerClientUtils.class.getName());
 
   public static DockerClient getDockerClient() {
     return getDockerClient(getDockerHost());
@@ -19,7 +22,7 @@ public class DockerClientUtils {
    * for other platforms, and we may want a way to configure authentication etc.
    */
   public static DockerClient getDockerClient(String dockerHost) {
-    System.out.println("Using dockerhost " + dockerHost);
+    log.fine("Using dockerhost " + dockerHost);
 
     DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
         .withDockerHost(dockerHost)

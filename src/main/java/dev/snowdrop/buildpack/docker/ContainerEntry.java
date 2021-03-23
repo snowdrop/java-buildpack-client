@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Abstraction representing an entry in a container. Allows for entries to be
@@ -101,28 +102,28 @@ public interface ContainerEntry {
       } };
     } else if (f.isDirectory()) {
       List<ContainerEntry> entries = new ArrayList<>();
-      Files.walk(f.toPath()).filter(p -> !p.toFile().isDirectory()).forEach(p -> {
-        entries.add(new ContainerEntry() {
-          @Override
-          public long getSize() throws IOException {
-            return Files.size(p);
-          }
-
-          @Override
-          public String getPath() {
-            // format MUST be unix, as we're putting them in a unix container
-            // This is slightly daft (have to handle when running on windows, where
-            // Paths.get returns windows paths)
-            String path = f.toPath().relativize(p).toString().replace("\\", "/");
-            return prefix + "/" + path;
-          }
-
-          @Override
-          public ContentSupplier getContentSupplier() throws IOException {
-            return () -> new BufferedInputStream(Files.newInputStream(p));
-          }
+      try (Stream<Path> paths = Files.walk(f.toPath())) {
+        paths.filter(p -> !p.toFile().isDirectory()).forEach(p -> {
+          entries.add(new ContainerEntry() {
+            @Override
+            public long getSize() throws IOException {
+              return Files.size(p);
+            }
+            @Override
+            public String getPath() {
+              // format MUST be unix, as we're putting them in a unix container
+              // This is slightly daft (have to handle when running on windows, where
+              // Paths.get returns windows paths)
+              String path = f.toPath().relativize(p).toString().replace("\\", "/");
+              return prefix + "/" + path;
+            }
+            @Override
+            public ContentSupplier getContentSupplier() throws IOException {
+              return () -> new BufferedInputStream(Files.newInputStream(p));
+            }
+          });
         });
-      });
+      }
       return entries.toArray(new ContainerEntry[] {});
     }
     return null;

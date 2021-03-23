@@ -6,12 +6,14 @@ import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.model.Image;
 
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Higher level docker image api
  */
 public class ImageUtils {
+  private static final Logger log = Logger.getLogger(ImageUtils.class.getName());
 
   public static class ImageInfo {
     public String id;
@@ -40,14 +42,14 @@ public class ImageUtils {
 
     if (imageNameSet.isEmpty()) {
       // fast exit if all images are already known to the local docker.
-      System.out.println("Nothing to pull, all of " + Arrays.asList(imageNames) + " are known");
+      log.fine("Nothing to pull, all of " + Arrays.asList(imageNames) + " are known");
       return;
     }
 
     // pull the images not known
     List<PullImageResultCallback> pircs = new ArrayList<>();
     for (String stillNeeded : imageNameSet) {
-      System.out.println("pulling '" + stillNeeded + "'");
+      log.fine("pulling '" + stillNeeded + "'");
       PullImageResultCallback pirc = new PullImageResultCallback();
       dc.pullImageCmd(stillNeeded).exec(pirc);
       pircs.add(pirc);
