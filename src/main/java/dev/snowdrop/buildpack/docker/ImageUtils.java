@@ -1,19 +1,26 @@
 package dev.snowdrop.buildpack.docker;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.model.Image;
 
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.concurrent.TimeUnit;
-
 /**
  * Higher level docker image api
  */
 public class ImageUtils {
-  private static final Logger log = Logger.getLogger(ImageUtils.class.getName());
+  private static final Logger log = LoggerFactory.getLogger(ImageUtils.class);
 
   public static class ImageInfo {
     public String id;
@@ -42,14 +49,14 @@ public class ImageUtils {
 
     if (imageNameSet.isEmpty()) {
       // fast exit if all images are already known to the local docker.
-      log.fine("Nothing to pull, all of " + Arrays.asList(imageNames) + " are known");
+      log.debug("Nothing to pull, all of " + Arrays.asList(imageNames) + " are known");
       return;
     }
 
     // pull the images not known
     List<PullImageResultCallback> pircs = new ArrayList<>();
     for (String stillNeeded : imageNameSet) {
-      log.fine("pulling '" + stillNeeded + "'");
+      log.debug("pulling '" + stillNeeded + "'");
       PullImageResultCallback pirc = new PullImageResultCallback();
       dc.pullImageCmd(stillNeeded).exec(pirc);
       pircs.add(pirc);

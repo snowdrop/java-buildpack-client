@@ -1,17 +1,19 @@
 package dev.snowdrop.buildpack.docker;
 
+import org.apache.commons.lang.SystemUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
-import org.apache.commons.lang.SystemUtils;
 
-import java.util.logging.Logger;
 
 public class DockerClientUtils {
-  private static final Logger log = Logger.getLogger(DockerClientUtils.class.getName());
+  private static final Logger log = LoggerFactory.getLogger(DockerClientUtils.class);
 
   public static DockerClient getDockerClient() {
     return getDockerClient(getDockerHost());
@@ -22,7 +24,7 @@ public class DockerClientUtils {
    * for other platforms, and we may want a way to configure authentication etc.
    */
   public static DockerClient getDockerClient(String dockerHost) {
-    log.fine("Using dockerhost " + dockerHost);
+    log.debug("Using dockerhost " + dockerHost);
 
     DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
         .withDockerHost(dockerHost)

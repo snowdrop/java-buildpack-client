@@ -6,9 +6,11 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Random;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,7 +31,7 @@ import dev.snowdrop.buildpack.docker.VolumeBind;
 import dev.snowdrop.buildpack.docker.VolumeUtils;
 
 public class BuildpackBuilderImpl implements BuildpackBuilder {
-  private static final Logger log = Logger.getLogger(BuildpackBuilderImpl.class.getName());
+  private static final Logger log = LoggerFactory.getLogger(BuildpackBuilderImpl.class);
 
   private final String PLATFORM_API_VERSION = "0.5";
 
