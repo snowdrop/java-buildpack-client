@@ -201,32 +201,13 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
 
   public int build() throws Exception {
     //Send logs to stdout/stderr if no logger configured. 
-    BuildpackBuilder.LogReader system = new BuildpackBuilder.LogReader() {
-      @Override
-      public boolean stripAnsiColor() {
-        return true;
-      }
-
-      @Override
-      public void stdout(String message) {
-        if (message.endsWith("\n")) {
-          message = message.substring(0, message.length() - 1);
-        }
-        System.out.println(message);
-      }
-
-      @Override
-      public void stderr(String message) {
-        if (message.endsWith("\n")) {
-          message = message.substring(0, message.length() - 1);
-        }
-        System.err.println(message);
-      }
-    };
+    BuildpackBuilder.LogReader system = new SystemRelay();
     return build(system);
   }
 
   public int build(LogReader logger) throws Exception {
+    log.info("Buildpack build invoked, preparing environment...");
+    
     prep();
 
     String buildCacheVolume = buildCacheVolumeName == null ? "build-" + randomString(10) : buildCacheVolumeName;
@@ -242,7 +223,8 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     VolumeUtils.createVolumeIfRequired(dc, applicationVolume);
     VolumeUtils.createVolumeIfRequired(dc, outputVolume);
     VolumeUtils.createVolumeIfRequired(dc, envVolume);
-
+    log.info("- build volumes created");
+    
     // configure our call to 'creator' which will do all the work.
     String[] xargs = { "bash", "-c", "ls -alR /app" };
 
@@ -276,12 +258,12 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
         new VolumeBind(applicationVolume, APP_VOL_PATH), new VolumeBind(dockerSocket, "/var/run/docker.sock"),
         new VolumeBind(outputVolume, OUTPUT_VOL_PATH));
 
-    log.info("mounted " + buildCacheVolume + " at " + BUILD_VOL_PATH);
-    log.info("mounted " + launchCacheVolume + " at " + LAUNCH_VOL_PATH);
-    log.info("mounted " + applicationVolume + " at " + APP_VOL_PATH);
-    log.info("mounted " + dockerSocket + " at " + "/var/run/docker.sock");
-    log.info("mounted " + outputVolume + " at " + OUTPUT_VOL_PATH);
-    log.info("container id " + id);
+    log.info("- mounted " + buildCacheVolume + " at " + BUILD_VOL_PATH);
+    log.info("- mounted " + launchCacheVolume + " at " + LAUNCH_VOL_PATH);
+    log.info("- mounted " + applicationVolume + " at " + APP_VOL_PATH);
+    log.info("- mounted " + dockerSocket + " at " + "/var/run/docker.sock");
+    log.info("- mounted " + outputVolume + " at " + OUTPUT_VOL_PATH);
+    log.info("- build container id " + id);
 
     // TODO: add environment volume content from caller (add to method args)
     // VolumeUtils.addContentToVolume(dc, envVolume, "env/CNB_SKIP_LAYERS", "true");
@@ -293,11 +275,13 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     // but subdirs are ok.
     ContainerEntry[] entries = applicationContent.toArray(new ContainerEntry[0]);
     ContainerUtils.addContentToContainer(dc, id, APP_VOL_PATH + "/content", userId, groupId, entries);
-    log.info("uploaded archive to container at " + APP_VOL_PATH + "/content");
+    log.info("- uploaded archive to container at " + APP_VOL_PATH + "/content");
 
     // launch the container!
+    log.info("- launching build container");
     dc.startContainerCmd(id).exec();
 
+    log.info("- attaching log relay");
     // grab the logs to stdout.
     dc.logContainerCmd(id)
       .withFollowStream(true)
@@ -308,7 +292,7 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
 
     // wait for the container to complete, and retrieve the exit code.
     int rc = dc.waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
-    log.info("Build exited with code " + rc);
+    log.info("Buildpack build complete, with exit code " + rc);
 
     // tidy up. remove container.
     ContainerUtils.removeContainer(dc, id);
@@ -363,12 +347,15 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
           ri = "docker.io/" + ri;
         }
         runImage = ri;
-        log.info("Using builder specified runImage " + ri);
       }
     }
 
     // pull the runImage.
     ImageUtils.pullImages(dc, pullTimeoutSeconds, runImage);
+    
+    log.info("Build configured with..");
+    log.info("- build image : "+buildImage);
+    log.info("- run image : "+runImage);
   }
 
   private String getValue(JsonNode root, String path) {
@@ -384,8 +371,7 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
   }
 
   // daft little adapter class to read log output from docker-java and spew it to
-  // the logger
-  // we strip ansi color escape sequences for clarity.
+  // the logger, stripping ansi color escape sequences for clarity.
   private static class ContainerLogReader extends ResultCallback.Adapter<Frame> {
     private final BuildpackBuilder.LogReader logger;
     private boolean stripColor;
@@ -398,7 +384,6 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     @Override
     public void onNext(Frame object) {
       if (StreamType.STDOUT == object.getStreamType() || StreamType.STDERR == object.getStreamType()) {
-
         String payload = new String(object.getPayload(), UTF_8);
         if (stripColor) {
           payload = payload.replaceAll("[^m]+m", "");
@@ -408,7 +393,6 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
         } else if (StreamType.STDERR == object.getStreamType()) {
           logger.stderr(payload);
         }
-
       }
     }
   }
