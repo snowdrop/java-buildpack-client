@@ -3,11 +3,13 @@ package dev.snowdrop.buildpack;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +42,7 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
   private final String LAUNCH_VOL_PATH = "/launch";
   private final String APP_VOL_PATH = "/app";
   private final String OUTPUT_VOL_PATH = "/out";
-  private final String ENV_VOL_PATH = "/env";
+  private final String PLATFORM_VOL_PATH = "/platform";
 
   //defaults for images
   private String buildImage = "paketobuildpacks/builder:base";
@@ -210,23 +212,23 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     
     prep();
 
-    String buildCacheVolume = buildCacheVolumeName == null ? "build-" + randomString(10) : buildCacheVolumeName;
-    String launchCacheVolume = launchCacheVolumeName == null ? "launch-" + randomString(10) : launchCacheVolumeName;
+    String buildCacheVolume = buildCacheVolumeName == null ? "buildpack-build-" + randomString(10) : buildCacheVolumeName;
+    String launchCacheVolume = launchCacheVolumeName == null ? "buildpack-launch-" + randomString(10) : launchCacheVolumeName;
 
-    String applicationVolume = "app-" + randomString(10);
-    String outputVolume = "output-" + randomString(10);
-    String envVolume = "env-" + randomString(10);
+    String applicationVolume = "buildpack-app-" + randomString(10);
+    String outputVolume = "buildpack-output-" + randomString(10);
+    String platformVolume = "buildpack-platform-" + randomString(10);
 
     // create all the volumes we plan to use =)
     VolumeUtils.createVolumeIfRequired(dc, buildCacheVolume);
     VolumeUtils.createVolumeIfRequired(dc, launchCacheVolume);
     VolumeUtils.createVolumeIfRequired(dc, applicationVolume);
     VolumeUtils.createVolumeIfRequired(dc, outputVolume);
-    VolumeUtils.createVolumeIfRequired(dc, envVolume);
+    VolumeUtils.createVolumeIfRequired(dc, platformVolume);
     log.info("- build volumes created");
     
     // configure our call to 'creator' which will do all the work.
-    String[] xargs = { "bash", "-c", "ls -alR /app" };
+    String[] xargs = { "bash", "-c", "ls -alR "+PLATFORM_VOL_PATH };
 
     String[] args = { "/cnb/lifecycle/creator", 
                       "-uid", "" + userId, 
@@ -234,7 +236,7 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
                       "-cache-dir", BUILD_VOL_PATH,
                       "-app", APP_VOL_PATH + "/content", 
                       "-layers", OUTPUT_VOL_PATH, 
-                      "-platform", ENV_VOL_PATH, 
+                      "-platform", PLATFORM_VOL_PATH, 
                       "-run-image", runImage, 
                       "-launch-cache", LAUNCH_VOL_PATH, 
                       "-daemon", // TODO: non daemon support.
@@ -261,21 +263,28 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     log.info("- mounted " + buildCacheVolume + " at " + BUILD_VOL_PATH);
     log.info("- mounted " + launchCacheVolume + " at " + LAUNCH_VOL_PATH);
     log.info("- mounted " + applicationVolume + " at " + APP_VOL_PATH);
+    log.info("- mounted " + platformVolume + " at " + PLATFORM_VOL_PATH);
     log.info("- mounted " + dockerSocket + " at " + "/var/run/docker.sock");
     log.info("- mounted " + outputVolume + " at " + OUTPUT_VOL_PATH);
     log.info("- build container id " + id);
 
-    // TODO: add environment volume content from caller (add to method args)
-    // VolumeUtils.addContentToVolume(dc, envVolume, "env/CNB_SKIP_LAYERS", "true");
-
     // add the application to the container. Note we are placing it at /app/content,
-    // because
-    // the /app mountpoint is mounted such that the user has no perms to create new
-    // content there,
-    // but subdirs are ok.
-    ContainerEntry[] entries = applicationContent.toArray(new ContainerEntry[0]);
-    ContainerUtils.addContentToContainer(dc, id, APP_VOL_PATH + "/content", userId, groupId, entries);
+    // because the /app mountpoint is mounted such that the user has no perms to create 
+    // new content there, but subdirs are ok.
+    ContainerEntry[] appEntries = applicationContent.toArray(new ContainerEntry[0]);
+    ContainerUtils.addContentToContainer(dc, id, APP_VOL_PATH + "/content", userId, groupId, appEntries);
     log.info("- uploaded archive to container at " + APP_VOL_PATH + "/content");
+    
+    //add the environment entries.
+    ContainerEntry[] envEntries = environment.entrySet().stream().map(e -> { 
+      try{ 
+        return ContainerEntry.fromString(e.getKey(), e.getValue()); 
+        }catch(IOException io) {
+          throw new RuntimeException("Error processing environment", io);
+        }
+      } ).collect(Collectors.toList()).toArray(new ContainerEntry[] {});
+    ContainerUtils.addContentToContainer(dc, id, PLATFORM_VOL_PATH + "/env", userId, groupId, envEntries);
+    log.info("- uploaded env to container at " + PLATFORM_VOL_PATH + "/env");  
 
     // launch the container!
     log.info("- launching build container");
@@ -308,7 +317,7 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     }
     VolumeUtils.removeVolume(dc, applicationVolume);
     VolumeUtils.removeVolume(dc, outputVolume);
-    VolumeUtils.removeVolume(dc, envVolume);
+    VolumeUtils.removeVolume(dc, platformVolume);
 
     return rc;
   }
@@ -327,7 +336,10 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
         groupId = Integer.valueOf(s.substring("CNB_GROUP_ID=".length()));
       }
     }
-
+    // override userid/groupid if cnb vars present within environment
+    if(environment.containsKey("CNB_USER_ID")) { userId = Integer.valueOf(environment.get("CNB_USER_ID")); }
+    if(environment.containsKey("CNB_GROUP_ID")) { userId = Integer.valueOf(environment.get("CNB_GROUP_ID")); }
+    
     // pull the buildpack metadata json.
     String metadataJson = ii.labels.get("io.buildpacks.builder.metadata");
     ObjectMapper om = new ObjectMapper();
