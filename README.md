@@ -70,9 +70,9 @@ Want to try out this project? well, it's not in maven central yet, and the packa
 2. Add this project as a dependency via jitpack. 
 ```
         <dependency>
-            <groupId>com.github.bardweller</groupId>
-            <artifactId>java-buildpack-client</artifactId>
-            <version>-SNAPSHOT</version>
+            <groupId>dev.snowdrop</groupId>
+            <artifactId>buildpack-client</artifactId>
+            <version>x.y.z-SNAPSHOT</version>
         </dependency> 
 ```
 
