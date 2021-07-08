@@ -106,6 +106,8 @@ BuildpackBuilder.get()
 
 There are many more ways to customize & configure the BuildpackBuilder, take a look at the [interface](src/main/java/dev/snowdrop/buildpack/BuildpackBuilder.java) to see everything thats currently possible. 
 
+A demo project has been created to play with the Java `BuildpackBuilder` [here](https://github.com/snowdrop/java-buildpack-demo) :-)
+
 Most likely if you are using this to integrate to existing tooling, you will want to supply a custom LogReader to receive the messages output by BuildPacks during the build. You may also want to associate cache names to a project, to enable faster rebuilds for a given project. 
 
 ## FAQ:
