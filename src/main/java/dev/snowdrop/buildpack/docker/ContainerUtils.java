@@ -24,6 +24,8 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Volume;
 
+import org.apache.commons.io.IOUtils;
+
 import dev.snowdrop.buildpack.docker.ContainerEntry.ContentSupplier;
 
 public class ContainerUtils {
@@ -172,7 +174,9 @@ public class ContainerUtils {
                 if(is==null) {
                   throw new IOException("Error ContentSupplier gave null for getData");
                 }
-                is.transferTo(tout);
+                
+                IOUtils.copy(is, tout);
+                
               }
               tout.closeArchiveEntry();
             }
