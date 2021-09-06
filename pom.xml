@@ -49,6 +49,21 @@
 
 
     <properties>
+      <!-- Dependency Versions -->
+      <version.docker-java>3.2.7</version.docker-java>
+      <version.slf4j>1.7.30</version.slf4j>
+      <version.commons-compress>1.20</version.commons-compress>
+      <version.jackson>2.10.3</version.jackson>
+      <version.lombok>1.18.12</version.lombok>
+      <version.findbugs>3.0.1u2</version.findbugs>
+      <version.junit>5.4.0</version.junit>
+      <version.mockito>3.7.7</version.mockito>
+
+      <!-- Maven Plugin Versions -->
+      <version.maven-compiler-plugin>3.8.1</version.maven-compiler-plugin>
+      <version.maven-surefire-plugin>2.22.0</version.maven-surefire-plugin>
+      <version.maven-failsafe-plugin>2.22.0</version.maven-failsafe-plugin>
+
       <!-- Release Plugins -->
       <version.maven-gpg-plugin>1.6</version.maven-gpg-plugin>
       <version.maven-enforcer-plugin>1.3.1</version.maven-enforcer-plugin>
@@ -60,51 +75,51 @@
         <dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java-core</artifactId>
-            <version>3.2.7</version>
+            <version>${version.docker-java}</version>
         </dependency>
         <dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java-transport-httpclient5</artifactId>
-            <version>3.2.7</version>
+            <version>${version.docker-java}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>1.7.30</version>
+            <version>${version.slf4j}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>1.20</version>
+            <version>${version.commons-compress}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.12</version>
+            <version>${version.lombok}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>2.10.3</version>
+            <version>${version.jackson}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>annotations</artifactId>
-            <version>3.0.1u2</version>
+            <version>${version.findbugs}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.4.0</version>
+            <version>${version.junit}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.4.0</version>
+            <version>${version.junit}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -116,7 +131,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>3.8.0</version>
+            <version>${version.mockito}</version>
             <scope>test</scope>
         </dependency>
 
@@ -126,7 +141,7 @@
       <plugins>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.1</version>
+          <version>${version.maven-compiler-plugin}</version>
           <configuration>
             <release>11</release>
           </configuration>
@@ -134,12 +149,12 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.0</version>
+          <version>${version.maven-surefire-plugin}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
-          <version>2.22.0</version>
+          <version>${version.maven-failsafe-plugin}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
