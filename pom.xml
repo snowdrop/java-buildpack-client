@@ -49,6 +49,8 @@
 
 
     <properties>
+      <java.source>1.8</java.source>
+      <java.target>1.8</java.target>
       <!-- Dependency Versions -->
       <version.docker-java>3.2.7</version.docker-java>
       <version.slf4j>1.7.30</version.slf4j>
@@ -134,21 +136,17 @@
             <version>${version.mockito}</version>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.6</version>
-        </dependency>
     </dependencies>
 
     <build>
       <plugins>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${version.maven-compiler-plugin}</version>
           <configuration>
-            <release>11</release>
+            <source>${java.source}</source>
+            <target>${java.target}</target>
           </configuration>
         </plugin>
         <plugin>
