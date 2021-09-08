@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
@@ -172,7 +173,9 @@ public class ContainerUtils {
                 if(is==null) {
                   throw new IOException("Error ContentSupplier gave null for getData");
                 }
-                is.transferTo(tout);
+                
+                copy(is, tout);
+                
               }
               tout.closeArchiveEntry();
             }
@@ -207,6 +210,14 @@ public class ContainerUtils {
       if (wio != null) {
         throw wio;
       }
+    }
+  }
+
+  private static final void copy(InputStream in, OutputStream out) throws IOException {
+    byte[] buf = new byte[8192];
+    int length;
+      while ((length = in.read(buf)) > 0) {
+        out.write(buf, 0, length);
     }
   }
 }
