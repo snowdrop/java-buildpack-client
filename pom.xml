@@ -1,179 +1,179 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>dev.snowdrop</groupId>
-    <artifactId>buildpack-client</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>dev.snowdrop</groupId>
+  <artifactId>buildpack-client-project</artifactId>
+  <version>0.0.2-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Snowdrop :: Java Buildpack Client :: Project</name>
 
-    <url>https://snowdrop.dev</url>
-    <inceptionYear>2020</inceptionYear>
+  <url>https://snowdrop.dev</url>
+  <inceptionYear>2020</inceptionYear>
 
-    <organization>
-      <name>Red Hat</name>
-      <url>http://redhat.com</url>
-    </organization>
+  <organization>
+    <name>Red Hat</name>
+    <url>http://redhat.com</url>
+  </organization>
 
-    <licenses>
-      <license>
-        <name>Apache License, Version 2.0</name>
-        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        <distribution>repo</distribution>
-      </license>
-    </licenses>
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
-    <!-- including A developer as it's required by the maven poms going into central -->
-    <developers>
-      <developer>
-        <id>geeks</id>
-        <name>Snowdrop Development Team</name>
-        <organization>snowdrop</organization>
-        <organizationUrl>http://snowdrop.dev/</organizationUrl>
-      </developer>
-    </developers>
+  <!-- including A developer as it's required by the maven poms going into central -->
+  <developers>
+    <developer>
+      <id>geeks</id>
+      <name>Snowdrop Development Team</name>
+      <organization>snowdrop</organization>
+      <organizationUrl>http://snowdrop.dev/</organizationUrl>
+    </developer>
+  </developers>
 
-    <scm>
-      <connection>scm:git:git@github.com:snowdrop/java-buildpack-client.git</connection>
-      <developerConnection>scm:git:git@github.com:snowdrop/java-buildpack-client.git</developerConnection>
-      <url>http://github.com/snowdrop/java-buildpack-client</url>
-      <tag>${project.version}</tag>
-    </scm>
+  <scm>
+    <connection>scm:git:git@github.com:snowdrop/java-buildpack-client.git</connection>
+    <developerConnection>scm:git:git@github.com:snowdrop/java-buildpack-client.git</developerConnection>
+    <url>http://github.com/snowdrop/java-buildpack-client</url>
+    <tag>${project.version}</tag>
+  </scm>
 
-    <distributionManagement>
-      <repository>
-        <id>oss-sonatype-staging</id>
-        <name>Sonatype Staging Repository</name>
-        <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-      </repository>
-    </distributionManagement>
+  <distributionManagement>
+    <repository>
+      <id>oss-sonatype-staging</id>
+      <name>Sonatype Staging Repository</name>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+    </repository>
+  </distributionManagement>
 
+  <properties>
+    <java.source>1.8</java.source>
+    <java.target>1.8</java.target>
+    <!-- Dependency Versions -->
+    <version.docker-java>3.2.7</version.docker-java>
+    <version.slf4j>1.7.30</version.slf4j>
+    <version.commons-compress>1.20</version.commons-compress>
+    <version.jackson>2.12.3</version.jackson>
+    <version.lombok>1.18.12</version.lombok>
+    <version.findbugs>3.0.1u2</version.findbugs>
+    <version.junit>5.4.0</version.junit>
+    <version.mockito>3.7.7</version.mockito>
 
-    <properties>
-      <java.source>1.8</java.source>
-      <java.target>1.8</java.target>
-      <!-- Dependency Versions -->
-      <version.docker-java>3.2.7</version.docker-java>
-      <version.slf4j>1.7.30</version.slf4j>
-      <version.commons-compress>1.20</version.commons-compress>
-      <version.jackson>2.12.3</version.jackson>
-      <version.lombok>1.18.12</version.lombok>
-      <version.findbugs>3.0.1u2</version.findbugs>
-      <version.junit>5.4.0</version.junit>
-      <version.mockito>3.7.7</version.mockito>
+    <!-- Maven Plugin Versions -->
+    <version.maven-compiler-plugin>3.8.1</version.maven-compiler-plugin>
+    <version.maven-surefire-plugin>2.22.0</version.maven-surefire-plugin>
+    <version.maven-failsafe-plugin>2.22.0</version.maven-failsafe-plugin>
 
-      <!-- Maven Plugin Versions -->
-      <version.maven-compiler-plugin>3.8.1</version.maven-compiler-plugin>
-      <version.maven-surefire-plugin>2.22.0</version.maven-surefire-plugin>
-      <version.maven-failsafe-plugin>2.22.0</version.maven-failsafe-plugin>
+    <!-- Release Plugins -->
+    <version.maven-gpg-plugin>1.6</version.maven-gpg-plugin>
+    <version.maven-enforcer-plugin>1.3.1</version.maven-enforcer-plugin>
+    <version.maven-javadoc-plugin>2.10.3</version.maven-javadoc-plugin>
+    <version.maven-source-plugin>2.4</version.maven-source-plugin>
+  </properties>
 
-      <!-- Release Plugins -->
-      <version.maven-gpg-plugin>1.6</version.maven-gpg-plugin>
-      <version.maven-enforcer-plugin>1.3.1</version.maven-enforcer-plugin>
-      <version.maven-javadoc-plugin>2.10.3</version.maven-javadoc-plugin>
-      <version.maven-source-plugin>2.4</version.maven-source-plugin>
-    </properties>
+  <modules>
+    <module>client</module>
+  </modules>
 
+  <dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java-core</artifactId>
-            <version>${version.docker-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java-transport-httpclient5</artifactId>
-            <version>${version.docker-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>${version.slf4j}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-compress</artifactId>
-            <version>${version.commons-compress}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${version.lombok}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>${version.jackson}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>annotations</artifactId>
-            <version>${version.findbugs}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${version.junit}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${version.junit}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-inline</artifactId>
-            <version>${version.mockito}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-junit-jupiter</artifactId>
-            <version>${version.mockito}</version>
-            <scope>test</scope>
-        </dependency>
+      <dependency>
+        <groupId>com.github.docker-java</groupId>
+        <artifactId>docker-java-core</artifactId>
+        <version>${version.docker-java}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.docker-java</groupId>
+        <artifactId>docker-java-transport-httpclient5</artifactId>
+        <version>${version.docker-java}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>${version.slf4j}</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>${version.commons-compress}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${version.lombok}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${version.jackson}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.code.findbugs</groupId>
+        <artifactId>annotations</artifactId>
+        <version>${version.findbugs}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${version.junit}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-inline</artifactId>
+        <version>${version.mockito}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-junit-jupiter</artifactId>
+        <version>${version.mockito}</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
-
-    <build>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>${version.maven-compiler-plugin}</version>
-          <configuration>
-            <source>${java.source}</source>
-            <target>${java.target}</target>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>${version.maven-surefire-plugin}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-failsafe-plugin</artifactId>
-          <version>${version.maven-failsafe-plugin}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-source-plugin</artifactId>
-	  <version>${version.maven-source-plugin}</version>
-	  <executions>
-	    <execution>
-	      <id>attach-sources</id>
-	      <goals>
-		<goal>jar</goal>
-	      </goals>
-	    </execution>
-	  </executions>
-        </plugin>
-      </plugins>
-    </build>
+  </dependencyManagement>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${version.maven-compiler-plugin}</version>
+        <configuration>
+          <source>${java.source}</source>
+          <target>${java.target}</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${version.maven-surefire-plugin}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${version.maven-failsafe-plugin}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+	<version>${version.maven-source-plugin}</version>
+	<executions>
+	  <execution>
+	    <id>attach-sources</id>
+	    <goals>
+	      <goal>jar</goal>
+	    </goals>
+	  </execution>
+	</executions>
+      </plugin>
+    </plugins>
+  </build>
 
   <profiles>
     <profile>
