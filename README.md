@@ -114,6 +114,46 @@ A demo project has been created to play with the Java `BuildpackBuilder` [here](
 
 Most likely if you are using this to integrate to existing tooling, you will want to supply a custom LogReader to receive the messages output by BuildPacks during the build. You may also want to associate cache names to a project, to enable faster rebuilds for a given project. 
 
+
+## Using the buildpack client with jbang
+
+The easiest way to invoke arbitrary java code, without much hassle is by using [jbang](https://www.jbang.dev/).
+
+So, you can drop the following file in your project:
+
+```java
+///usr/bin/env jbang "$0" "$@" ; exit $?
+
+//DEPS dev.snowdrop:buildpack-client:0.0.2-SNAPSHOT
+import static java.lang.System.*;
+
+import java.io.File;
+import dev.snowdrop.buildpack.*;
+
+public class pack {
+
+    public static void main(String... args) {
+      try {
+      BuildpackBuilder.get()
+        .withContent(new File("."))
+        .withFinalImage("test/my-image:latest")
+        .build(new LogRelay());
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+}
+
+```
+
+... and just run it using:
+
+```
+./pack.java
+```
+
+See how it's used in the included [samples](./samples).
+
 ## FAQ:
 
 **Will this work with Podman?:**
