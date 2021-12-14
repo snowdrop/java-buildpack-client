@@ -1,18 +1,16 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
       <groupId>dev.snowdrop</groupId>
       <artifactId>buildpack-client-project</artifactId>
-      <version>0.0.2-SNAPSHOT</version>
+      <version>0.0.2</version>
       <relativePath>..</relativePath>
     </parent>
 
     <groupId>dev.snowdrop</groupId>
     <artifactId>buildpack-client</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>0.0.2</version>
     <name>Snowdrop :: Java Buildpack Client :: Client</name>
 
     <dependencies>
