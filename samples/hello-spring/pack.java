@@ -1,7 +1,7 @@
 ///usr/bin/env jbang "$0" "$@" ; exit $?
 // //DEPS <dependency1> <dependency2>
 
-//DEPS dev.snowdrop:buildpack-client:0.0.2-SNAPSHOT
+//DEPS dev.snowdrop:buildpack-client:0.0.2
 import static java.lang.System.*;
 
 import java.io.File;

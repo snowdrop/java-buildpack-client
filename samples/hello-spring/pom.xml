@@ -10,9 +10,9 @@
 	</parent>
 	<groupId>dev.snowdrop</groupId>
 	<artifactId>hello-spring</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
-	<name>demo</name>
-	<description>Demo project for Spring Boot</description>
+	<version>0.0.3-SNAPSHOT</version>
+        <name>Snowdrop :: Java Buildpack Client :: Samples :: Hello Spring</name>
+	<description>Demo project for Spring Boot with Java Buildpack client script</description>
 	<properties>
 		<java.version>11</java.version>
 	</properties>
