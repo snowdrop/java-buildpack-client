@@ -4,13 +4,13 @@
     <parent>
       <groupId>dev.snowdrop</groupId>
       <artifactId>buildpack-client-project</artifactId>
-      <version>0.0.2</version>
+      <version>0.0.3-SNAPSHOT</version>
       <relativePath>..</relativePath>
     </parent>
 
     <groupId>dev.snowdrop</groupId>
     <artifactId>buildpack-client</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3-SNAPSHOT</version>
     <name>Snowdrop :: Java Buildpack Client :: Client</name>
 
     <dependencies>
