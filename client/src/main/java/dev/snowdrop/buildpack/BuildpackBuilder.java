@@ -34,11 +34,11 @@ public interface BuildpackBuilder {
     BuildpackBuilder useDockerDaemon(boolean useDaemon);    
 
     //application content specification
-    BuildpackBuilder withContent(File content) throws Exception;    
-    BuildpackBuilder withContent(String prefix, File content) throws Exception;
+    BuildpackBuilder withContent(File content);    
+    BuildpackBuilder withContent(String prefix, File content);
     BuildpackBuilder withContent(String filepath, String filecontent);
-    BuildpackBuilder withContent(String filepath, long length, ContentSupplier content) throws Exception;
-    BuildpackBuilder withContent(ContainerEntry... entries) throws Exception;
+    BuildpackBuilder withContent(String filepath, long length, ContentSupplier content);
+    BuildpackBuilder withContent(ContainerEntry... entries);
 
     //build cache configuration
     BuildpackBuilder withBuildCache(String cacheVolume);
@@ -53,8 +53,8 @@ public interface BuildpackBuilder {
     BuildpackBuilder requestBuildTimestamps(boolean timestampsEnabled);
 
     //execute build
-    int build() throws Exception;
-    int build(LogReader logger) throws Exception;
+    int build();
+    int build(LogReader logger);
 
     //handle messages during build
     static interface LogReader {

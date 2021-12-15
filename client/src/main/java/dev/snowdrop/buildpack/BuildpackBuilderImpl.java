@@ -130,16 +130,16 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     return this;
   }
 
-  public BuildpackBuilder withContent(String filepath, long length, ContentSupplier content) throws Exception {
+  public BuildpackBuilder withContent(String filepath, long length, ContentSupplier content) {
     this.applicationContent.addLast(ContainerEntry.fromStream(filepath, length, content));
     return this;
   }
 
-  public BuildpackBuilder withContent(File content) throws Exception {
+  public BuildpackBuilder withContent(File content) {
     return this.withContent("", content);
   }
 
-  public BuildpackBuilder withContent(String prefix, File content) throws Exception {
+  public BuildpackBuilder withContent(String prefix, File content) {
     ContainerEntry[] entries = ContainerEntry.fromFile(prefix, content);
     if (entries != null) {
       for (ContainerEntry ce : entries) {
@@ -149,7 +149,7 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     return this;
   }
 
-  public BuildpackBuilder withContent(ContainerEntry... entries) throws Exception {
+  public BuildpackBuilder withContent(ContainerEntry... entries) {
     for (ContainerEntry ce : entries) {
       this.applicationContent.addLast(ce);
     }
@@ -201,13 +201,13 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     return this;
   }
 
-  public int build() throws Exception {
+  public int build() {
     //Send logs to stdout/stderr if no logger configured. 
     BuildpackBuilder.LogReader system = new SystemRelay();
     return build(system);
   }
 
-  public int build(LogReader logger) throws Exception {
+  public int build(LogReader logger) {
     log.info("Buildpack build invoked, preparing environment...");
     
     prep();
@@ -277,12 +277,8 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     
     //add the environment entries.
     ContainerEntry[] envEntries = environment.entrySet().stream().map(e -> { 
-      try{ 
         return ContainerEntry.fromString(e.getKey(), e.getValue()); 
-        }catch(IOException io) {
-          throw new RuntimeException("Error processing environment", io);
-        }
-      } ).collect(Collectors.toList()).toArray(new ContainerEntry[] {});
+      }).collect(Collectors.toList()).toArray(new ContainerEntry[] {});
     ContainerUtils.addContentToContainer(dc, id, PLATFORM_VOL_PATH + "/env", userId, groupId, envEntries);
     log.info("- uploaded env to container at " + PLATFORM_VOL_PATH + "/env");  
 
@@ -322,7 +318,7 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     return rc;
   }
 
-  private void prep() throws Exception {
+  private void prep() {
 
     ImageUtils.pullImages(dc, pullTimeoutSeconds, buildImage);
     ImageInfo ii = ImageUtils.inspectImage(dc, buildImage);
@@ -344,22 +340,24 @@ public class BuildpackBuilderImpl implements BuildpackBuilder {
     String metadataJson = ii.labels.get("io.buildpacks.builder.metadata");
     ObjectMapper om = new ObjectMapper();
     om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    JsonNode root = om.readTree(metadataJson);
-
-    // read the buildpacks recommended runImage
-    String ri = getValue(root, "stack/runImage/image");
-
-    // if caller didn't set runImage, use one from buildPack.
-    if (runImage == null) {
-      if (ri == null) {
-        throw new Exception("No runImage specified, and builderImage is missing metadata declaration");
-      } else {
-        if (ri.startsWith("index.docker.io/")) {
-          ri = ri.substring("index.docker.io/".length());
-          ri = "docker.io/" + ri;
+    try {
+      JsonNode root = om.readTree(metadataJson);
+      // read the buildpacks recommended runImage
+      String ri = getValue(root, "stack/runImage/image");
+      // if caller didn't set runImage, use one from buildPack.
+      if (runImage == null) {
+        if (ri == null) {
+          throw new Exception("No runImage specified, and builderImage is missing metadata declaration");
+        } else {
+          if (ri.startsWith("index.docker.io/")) {
+            ri = ri.substring("index.docker.io/".length());
+            ri = "docker.io/" + ri;
+          }
+          runImage = ri;
         }
-        runImage = ri;
       }
+    } catch (Exception e) {
+      throw BuildpackException.launderThrowable(e);
     }
 
     // pull the runImage.

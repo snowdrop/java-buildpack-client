@@ -15,7 +15,8 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.model.Image;
-
+  
+import dev.snowdrop.buildpack.BuildpackException;
 /**
  * Higher level docker image api
  */
@@ -31,7 +32,7 @@ public class ImageUtils {
   /**
    * Util method to pull images if they don't exist to the local docker yet.
    */
-  public static void pullImages(DockerClient dc, int timeoutSeconds, String... imageNames) throws InterruptedException {
+  public static void pullImages(DockerClient dc, int timeoutSeconds, String... imageNames) {
     Set<String> imageNameSet = new HashSet<>(Arrays.asList(imageNames));
 
     // list the current known images
@@ -64,7 +65,11 @@ public class ImageUtils {
 
     // wait for pulls to complete.
     for (PullImageResultCallback pirc : pircs) {
-      pirc.awaitCompletion(timeoutSeconds, TimeUnit.SECONDS);
+      try {
+        pirc.awaitCompletion(timeoutSeconds, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        throw BuildpackException.launderThrowable(e);
+      }
     }
 
     // TODO: progress tracking..

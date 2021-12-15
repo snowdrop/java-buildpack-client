@@ -29,13 +29,11 @@ public class VolumeUtils {
     dc.removeVolumeCmd(volumeName).exec();
   }
 
-  public static boolean addContentToVolume(DockerClient dc, String volumeName, String pathInVolume, File content)
-      throws IOException {
+  public static boolean addContentToVolume(DockerClient dc, String volumeName, String pathInVolume, File content) {
     return internalAddContentToVolume(dc, volumeName, ContainerEntry.fromFile("/volumecontent", content));
   }
 
-  public static boolean addContentToVolume(DockerClient dc, String volumeName, String name, String content)
-      throws IOException {
+  public static boolean addContentToVolume(DockerClient dc, String volumeName, String name, String content) {
     return internalAddContentToVolume(dc, volumeName, ContainerEntry.fromString("/volumecontent/" + name, content));
   }
 
@@ -44,8 +42,7 @@ public class VolumeUtils {
     return exists(dc, volumeName);
   }
 
-  private static boolean internalAddContentToVolume(DockerClient dc, String volumeName, ContainerEntry... entries)
-      throws IOException {
+  private static boolean internalAddContentToVolume(DockerClient dc, String volumeName, ContainerEntry... entries) {
     // TODO: find better 'no-op' container to use?
     String dummyId = ContainerUtils.createContainer(dc, "tianon/true", new VolumeBind(volumeName, "/volumecontent"));
 

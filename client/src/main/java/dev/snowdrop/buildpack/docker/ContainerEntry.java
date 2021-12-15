@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import dev.snowdrop.buildpack.BuildpackException;
+
 /**
  * Abstraction representing an entry in a container. Allows for entries to be
  * added from sources other than File/Directory (eg, String as a test content,
@@ -19,23 +21,23 @@ import java.util.stream.Stream;
 public interface ContainerEntry {
   public String getPath();
 
-  public long getSize() throws IOException;
+  public long getSize();
 
-  public ContentSupplier getContentSupplier() throws IOException;
+  public ContentSupplier getContentSupplier();
 
   @FunctionalInterface
   public interface ContentSupplier {
-    InputStream getData() throws IOException;
+    InputStream getData();
   }
 
   /**
    * build a container entry from a string, to be present in the container at
    * /path
    */
-  static ContainerEntry fromString(String name, String content) throws IOException {
+  static ContainerEntry fromString(String name, String content) {
     return new ContainerEntry() {
       @Override
-      public long getSize() throws IOException {
+      public long getSize() {
         return content.getBytes().length;
       }
 
@@ -45,7 +47,7 @@ public interface ContainerEntry {
       }
 
       @Override
-      public ContentSupplier getContentSupplier() throws IOException {
+      public ContentSupplier getContentSupplier() {
         return () -> new ByteArrayInputStream(content.getBytes());
       }
     };
@@ -54,7 +56,7 @@ public interface ContainerEntry {
   static ContainerEntry fromStream(String name, long length, ContentSupplier data) {
     return new ContainerEntry() {
       @Override
-      public long getSize() throws IOException {
+      public long getSize() {
         return length;
       }
 
@@ -64,7 +66,7 @@ public interface ContainerEntry {
       }
 
       @Override
-      public ContentSupplier getContentSupplier() throws IOException {
+      public ContentSupplier getContentSupplier() {
         return data;
       }
     };
@@ -76,7 +78,7 @@ public interface ContainerEntry {
    * dir. Eg, given /a/one/a /a/two/a, passing prefix of /stiletto with /a results
    * in /stiletto/one/a and /stiletto/two/a being created.
    */
-  static ContainerEntry[] fromFile(String prefix, File f) throws IOException {
+  static ContainerEntry[] fromFile(String prefix, File f) {
     if (!f.exists()) {
       return null;
     }
@@ -84,8 +86,12 @@ public interface ContainerEntry {
     if (f.isFile() && !f.isDirectory()) {
       return new ContainerEntry[] { new ContainerEntry() {
         @Override
-        public long getSize() throws IOException {
-          return Files.size(f.toPath());
+        public long getSize() {
+          try { 
+            return Files.size(f.toPath());
+          } catch (IOException e)  {
+            throw BuildpackException.launderThrowable(e);
+          }
         }
 
         @Override
@@ -97,7 +103,15 @@ public interface ContainerEntry {
         @Override
         public ContentSupplier getContentSupplier() {
           Path p = f.toPath();
-          return () -> new BufferedInputStream(Files.newInputStream(p));
+          return new ContentSupplier() {
+            public InputStream getData() {
+              try {
+               return new BufferedInputStream(Files.newInputStream(p));
+              } catch (IOException e) {
+                throw BuildpackException.launderThrowable(e);
+              }
+            }
+          };
         }
       } };
     } else if (f.isDirectory()) {
@@ -106,8 +120,12 @@ public interface ContainerEntry {
         paths.filter(p -> !p.toFile().isDirectory()).forEach(p -> {
           entries.add(new ContainerEntry() {
             @Override
-            public long getSize() throws IOException {
-              return Files.size(p);
+            public long getSize() {
+              try {
+                return Files.size(p);
+              } catch (IOException e) {
+                throw BuildpackException.launderThrowable(e);
+              }
             }
             @Override
             public String getPath() {
@@ -118,11 +136,21 @@ public interface ContainerEntry {
               return prefix + "/" + path;
             }
             @Override
-            public ContentSupplier getContentSupplier() throws IOException {
-              return () -> new BufferedInputStream(Files.newInputStream(p));
+            public ContentSupplier getContentSupplier() {
+              return new ContentSupplier() {
+                public InputStream getData() {
+                  try {
+                    return  new BufferedInputStream(Files.newInputStream(p));
+                  } catch (IOException e) {
+                    throw BuildpackException.launderThrowable(e);
+                  }
+                }
+              };
             }
           });
         });
+      } catch (IOException e) {
+        throw BuildpackException.launderThrowable(e);
       }
       return entries.toArray(new ContainerEntry[] {});
     }
