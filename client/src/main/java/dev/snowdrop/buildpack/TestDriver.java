@@ -5,8 +5,10 @@ import java.io.File;
 public class TestDriver {
 
   public TestDriver() throws Exception {
-    BuildpackBuilder.get()
-      .withContent(new File("/home/ozzy/Work/java-buildpack-client"))
+    Buildpack.builder()
+      .addNewFileContent()
+        .withFile(new File("/home/ozzy/Work/java-buildpack-client"))
+      .endFileContent()
       .withFinalImage("test/testimage:latest")
       .withLogLevel("debug")
       .build();

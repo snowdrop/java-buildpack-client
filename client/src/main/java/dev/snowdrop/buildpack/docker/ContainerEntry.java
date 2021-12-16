@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -19,6 +20,8 @@ import dev.snowdrop.buildpack.BuildpackException;
  * or programmatic supply via future i/f)
  */
 public interface ContainerEntry {
+
+
   public String getPath();
 
   public long getSize();
@@ -28,6 +31,10 @@ public interface ContainerEntry {
   @FunctionalInterface
   public interface ContentSupplier {
     InputStream getData();
+  }
+
+  default List<ContainerEntry> getEntries() {
+    return Arrays.asList(this);
   }
 
   /**
