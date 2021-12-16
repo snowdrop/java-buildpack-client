@@ -26,6 +26,8 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Volume;
 
 import dev.snowdrop.buildpack.docker.ContainerEntry.ContentSupplier;
+import dev.snowdrop.buildpack.BuildpackException;
+
 
 public class ContainerUtils {
   private static final Logger log = LoggerFactory.getLogger(ContainerUtils.class);
@@ -72,18 +74,17 @@ public class ContainerUtils {
     dc.removeContainerCmd(containerId).exec();
   }
 
-  public static void addContentToContainer(DockerClient dc, String containerId, ContainerEntry... entries)
-      throws IOException {
+  public static void addContentToContainer(DockerClient dc, String containerId, ContainerEntry... entries) {
     addContentToContainer(dc, containerId, "", 0, 0, entries);
   }
 
   public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId,
-      Integer groupId, File content) throws IOException {
+      Integer groupId, File content) {
     addContentToContainer(dc, containerId, pathInContainer, userId, groupId, ContainerEntry.fromFile("", content));
   }
 
   public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId,
-      Integer groupId, String name, String content) throws IOException {
+      Integer groupId, String name, String content) {
     addContentToContainer(dc, containerId, pathInContainer, userId, groupId, ContainerEntry.fromString(name, content));
   }
 
@@ -93,25 +94,28 @@ public class ContainerUtils {
    * directories were being created with perms preventing the buildpack from
    * executing as expected.
    */
-  private static void addParents(TarArchiveOutputStream tout, Set<String> seenDirs, int uid, int gid, String path)
-      throws IOException {
-    if (path.contains("/")) {
-      String parent = path.substring(0, path.lastIndexOf("/"));
-      boolean unknown = seenDirs.add(parent);
-      // only need to follow this chain if we haven't done it already =)
-      if (unknown) {
-        // add parents of this FIRST
-        addParents(tout, seenDirs, uid, gid, parent);
-
-        log.debug("adding "+parent+"/");
-        // and then add this =)
-        TarArchiveEntry tae = new TarArchiveEntry(parent + "/");
-        tae.setSize(0);
-        tae.setUserId(uid);
-        tae.setGroupId(gid);
-        tout.putArchiveEntry(tae);
-        tout.closeArchiveEntry();
+  private static void addParents(TarArchiveOutputStream tout, Set<String> seenDirs, int uid, int gid, String path) {
+    try {
+      if (path.contains("/")) {
+        String parent = path.substring(0, path.lastIndexOf("/"));
+        boolean unknown = seenDirs.add(parent);
+        // only need to follow this chain if we haven't done it already =)
+        if (unknown) {
+          // add parents of this FIRST
+          addParents(tout, seenDirs, uid, gid, parent);
+          
+          log.debug("adding "+parent+"/");
+          // and then add this =)
+          TarArchiveEntry tae = new TarArchiveEntry(parent + "/");
+          tae.setSize(0);
+          tae.setUserId(uid);
+          tae.setGroupId(gid);
+          tout.putArchiveEntry(tae);
+          tout.closeArchiveEntry();
+        }
       }
+    } catch (IOException e) {
+      throw BuildpackException.launderThrowable(e);
     }
   }
 
@@ -119,7 +123,7 @@ public class ContainerUtils {
    * Adds content to the container, with specified uid/gid
    */
   public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId,
-      Integer groupId, ContainerEntry... entries) throws IOException {
+      Integer groupId, ContainerEntry... entries) {
 
     Set<String> seenDirs = new HashSet<>();
     // Don't add entry for "/", causes issues with tar format.
@@ -134,13 +138,12 @@ public class ContainerUtils {
     final int gid = (groupId != null) ? groupId : 0;
 
     try (PipedInputStream in = new PipedInputStream(4096); PipedOutputStream out = new PipedOutputStream(in)) {
-      AtomicReference<IOException> writerException = new AtomicReference<>();
+      AtomicReference<Exception> writerException = new AtomicReference<>();
 
       Runnable writer = new Runnable() {
         @Override
         public void run() {
-          try (TarArchiveOutputStream tout = new TarArchiveOutputStream(
-              new GZIPOutputStream(new BufferedOutputStream(out)));) {
+          try (TarArchiveOutputStream tout = new TarArchiveOutputStream(new GZIPOutputStream(new BufferedOutputStream(out)));) {
             tout.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
             for (ContainerEntry ve : entries) {
               // prefix the entry path with the pathInContainer value.
@@ -178,12 +181,12 @@ public class ContainerUtils {
                 
               }
               tout.closeArchiveEntry();
-            }
-          } catch (IOException e) {
+            } 
+          } catch (Exception e) {
             writerException.set(e);
           }
-        }
-      };
+        } 
+        };
 
       Runnable reader = new Runnable() {
         @Override
@@ -202,22 +205,28 @@ public class ContainerUtils {
         t1.join();
         t2.join();
       } catch (InterruptedException ie) {
-        throw new IOException(ie);
+        throw BuildpackException.launderThrowable(ie);
       }
 
       // did the write thread complete without issues? if not, bubble the cause.
-      IOException wio = writerException.get();
+      Exception wio = writerException.get();
       if (wio != null) {
-        throw wio;
+        throw BuildpackException.launderThrowable(wio);
       }
+    } catch (IOException e) {
+        throw BuildpackException.launderThrowable(e);
     }
   }
 
-  private static final void copy(InputStream in, OutputStream out) throws IOException {
+  private static final void copy(InputStream in, OutputStream out) {
     byte[] buf = new byte[8192];
     int length;
+    try {
       while ((length = in.read(buf)) > 0) {
         out.write(buf, 0, length);
+      }
+    } catch (IOException e) {
+      throw BuildpackException.launderThrowable(e);
     }
   }
 }

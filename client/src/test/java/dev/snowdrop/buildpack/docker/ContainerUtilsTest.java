@@ -41,6 +41,8 @@ import com.github.dockerjava.api.command.RemoveContainerCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.HostConfig;
 
+import dev.snowdrop.buildpack.BuildpackException;
+
 @ExtendWith(MockitoExtension.class)
 class ContainerUtilsTest {
 
@@ -146,7 +148,7 @@ class ContainerUtilsTest {
   }
 
   @Test
-  void addContentToContainerViaString(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) throws IOException {
+  void addContentToContainerViaString(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
 
     String content = "Wibble";
     String contentPath = "/one";
@@ -191,8 +193,7 @@ class ContainerUtilsTest {
   }
 
   @Test
-  void addContentToContainerViaStringWithoutUserIdAndGroup(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc)
-      throws IOException {
+  void addContentToContainerViaStringWithoutUserIdAndGroup(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
 
     String content = "Wibble";
     String contentPath = "/one";
@@ -234,8 +235,7 @@ class ContainerUtilsTest {
   }
 
   @Test
-  void addContentToContainerViaBrokenPathContentEntry(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc)
-      throws IOException {
+  void addContentToContainerViaBrokenPathContentEntry(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
 
     String containerId = "id";
 
@@ -248,15 +248,15 @@ class ContainerUtilsTest {
         return null;
       }
 
-      public long getSize() throws IOException {
+      public long getSize() {
         return 0;
       }
 
-      public ContentSupplier getContentSupplier() throws IOException {
+      public ContentSupplier getContentSupplier() {
         return null;
       }
     };
-    Exception e = assertThrows(IOException.class, () -> {
+    Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
 
@@ -264,8 +264,7 @@ class ContainerUtilsTest {
   }
 
   @Test
-  void addContentToContainerViaBrokenSizeContentEntry(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc)
-      throws IOException {
+  void addContentToContainerViaBrokenSizeContentEntry(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
 
     String containerId = "id";
 
@@ -278,15 +277,15 @@ class ContainerUtilsTest {
         return "fish";
       }
 
-      public long getSize() throws IOException {
-        throw new IOException("Test");
+      public long getSize() {
+        throw BuildpackException.launderThrowable(new IOException("Test"));
       }
 
-      public ContentSupplier getContentSupplier() throws IOException {
+      public ContentSupplier getContentSupplier() {
         return null;
       }
     };
-    Exception e = assertThrows(IOException.class, () -> {
+    Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
 
@@ -295,7 +294,7 @@ class ContainerUtilsTest {
 
   @Test
   void addContentToContainerViaMissingContentSupplier(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc)
-      throws IOException {
+      {
 
     String containerId = "id";
 
@@ -308,23 +307,22 @@ class ContainerUtilsTest {
         return "fish";
       }
 
-      public long getSize() throws IOException {
+      public long getSize() {
         return 4;
       }
 
-      public ContentSupplier getContentSupplier() throws IOException {
+      public ContentSupplier getContentSupplier() {
         return null;
       }
     };
-    Exception e = assertThrows(IOException.class, () -> {
+    Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
     verify(catcc).exec();
   }
 
   @Test
-  void addContentToContainerViaBrokenContentSupplier(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc)
-      throws IOException {
+  void addContentToContainerViaBrokenContentSupplier(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
 
     String containerId = "id";
 
@@ -337,19 +335,19 @@ class ContainerUtilsTest {
         return "fish";
       }
 
-      public long getSize() throws IOException {
+      public long getSize() {
         return 4;
       }
 
-      public ContentSupplier getContentSupplier() throws IOException {
+      public ContentSupplier getContentSupplier() {
         return new ContentSupplier() {
-          public InputStream getData() throws IOException {
-            throw new IOException("Test");
+          public InputStream getData() {
+            throw BuildpackException.launderThrowable(new IOException("Test"));
           }
         };
       }
     };
-    Exception e = assertThrows(IOException.class, () -> {
+    Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
     verify(catcc).exec();
@@ -357,7 +355,7 @@ class ContainerUtilsTest {
 
   @Test
   void addContentToContainerViaContentSupplierWithNullData(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc)
-      throws IOException {
+      {
 
     String containerId = "id";
 
@@ -370,19 +368,19 @@ class ContainerUtilsTest {
         return "fish";
       }
 
-      public long getSize() throws IOException {
+      public long getSize() {
         return 4;
       }
 
-      public ContentSupplier getContentSupplier() throws IOException {
+      public ContentSupplier getContentSupplier() {
         return new ContentSupplier() {
-          public InputStream getData() throws IOException {
+          public InputStream getData() {
             return null;
           }
         };
       }
     };
-    Exception e = assertThrows(IOException.class, () -> {
+    Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
     verify(catcc).exec();
@@ -395,7 +393,7 @@ class ContainerUtilsTest {
       @Mock Path p,
       @Mock FileSystem fs,
       @Mock FileSystemProvider fsp,
-      @Mock BasicFileAttributes bfa) throws IOException {
+      @Mock BasicFileAttributes bfa) {
 
     String containerId = "id";
 
@@ -435,8 +433,12 @@ class ContainerUtilsTest {
     when(p.getFileSystem()).thenReturn(fs);
     when(fs.provider()).thenReturn(fsp);
     
-    when(fsp.newInputStream(eq(p), ArgumentMatchers.any())).thenReturn(new ByteArrayInputStream("fish".getBytes()));
-    when(fsp.readAttributes(eq(p),eq(BasicFileAttributes.class))).thenReturn(bfa);
+    try {
+      when(fsp.newInputStream(eq(p), ArgumentMatchers.any())).thenReturn(new ByteArrayInputStream("fish".getBytes()));
+      when(fsp.readAttributes(eq(p),eq(BasicFileAttributes.class))).thenReturn(bfa);
+    } catch (IOException e)  {
+      throw BuildpackException.launderThrowable(e);
+    }
     when(bfa.size()).thenReturn(4L);
     
     ContainerUtils.addContentToContainer(dc, containerId, "/", 0,0, f);
