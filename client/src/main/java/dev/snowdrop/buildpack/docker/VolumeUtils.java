@@ -1,7 +1,7 @@
 package dev.snowdrop.buildpack.docker;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.List;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.NotFoundException;
@@ -30,16 +30,20 @@ public class VolumeUtils {
   }
 
   public static boolean addContentToVolume(DockerClient dc, String volumeName, String pathInVolume, File content) {
-    return internalAddContentToVolume(dc, volumeName, ContainerEntry.fromFile("/volumecontent", content));
+    return internalAddContentToVolume(dc, volumeName, new FileContent("/volumecontent", content).getContainerEntries());
   }
 
   public static boolean addContentToVolume(DockerClient dc, String volumeName, String name, String content) {
-    return internalAddContentToVolume(dc, volumeName, ContainerEntry.fromString("/volumecontent/" + name, content));
+    return internalAddContentToVolume(dc, volumeName, new StringContent("/volumecontent/" + name, content).getContainerEntries());
   }
 
   private static boolean internalCreateVolume(DockerClient dc, String volumeName) {
     dc.createVolumeCmd().withName(volumeName).exec();
     return exists(dc, volumeName);
+  }
+
+  private static boolean internalAddContentToVolume(DockerClient dc, String volumeName, List<ContainerEntry> entries) {
+    return internalAddContentToVolume(dc, volumeName, entries.toArray(new ContainerEntry[entries.size()]));
   }
 
   private static boolean internalAddContentToVolume(DockerClient dc, String volumeName, ContainerEntry... entries) {

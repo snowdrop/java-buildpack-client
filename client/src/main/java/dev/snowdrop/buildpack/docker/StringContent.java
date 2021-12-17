@@ -2,11 +2,13 @@
 package dev.snowdrop.buildpack.docker;
 
 import java.io.ByteArrayInputStream;
+import java.util.Arrays;
+import java.util.List;
 
 import io.sundr.builder.annotations.Buildable;
 
-@Buildable(generateBuilderPackage=true, builderPackage="dev.snowdrop.buildpack.builder")
-public class StringContent implements ContainerEntry {
+@Buildable(generateBuilderPackage = true, builderPackage = "dev.snowdrop.buildpack.builder")
+public class StringContent implements Content {
 
   private final String path;
   private final String content;
@@ -16,22 +18,31 @@ public class StringContent implements ContainerEntry {
     this.content = content;
   }
 
-  @Override
-  public ContentSupplier getContentSupplier() {
-    return () -> new ByteArrayInputStream(content.getBytes());
-  }
-
-  @Override
   public String getPath() {
     return path;
   }
 
-  @Override
-  public long getSize() {
-    return content != null ? content.getBytes().length : 0;
-  }
-
   public String getContent() {
     return this.content;
+  }
+
+  @Override
+  public List<ContainerEntry> getContainerEntries() {
+    return Arrays.asList(new ContainerEntry() {
+      @Override
+      public long getSize() {
+        return content.getBytes().length;
+      }
+
+      @Override
+      public String getPath() {
+        return path;
+      }
+
+      @Override
+      public ContentSupplier getContentSupplier() {
+        return () -> new ByteArrayInputStream(content.getBytes());
+      }
+    });
   }
 }

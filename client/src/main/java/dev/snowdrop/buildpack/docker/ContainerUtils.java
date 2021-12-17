@@ -74,18 +74,22 @@ public class ContainerUtils {
     dc.removeContainerCmd(containerId).exec();
   }
 
+  public static void addContentToContainer(DockerClient dc, String containerId, List<ContainerEntry> entries) {
+    addContentToContainer(dc, containerId, entries != null ? entries.toArray(new ContainerEntry[entries.size()]) : new ContainerEntry[0]);
+  }
+  
   public static void addContentToContainer(DockerClient dc, String containerId, ContainerEntry... entries) {
     addContentToContainer(dc, containerId, "", 0, 0, entries);
   }
 
   public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId,
       Integer groupId, File content) {
-    addContentToContainer(dc, containerId, pathInContainer, userId, groupId, ContainerEntry.fromFile("", content));
+    addContentToContainer(dc, containerId, pathInContainer, userId, groupId, new FileContent("", content).getContainerEntries());
   }
 
   public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId,
       Integer groupId, String name, String content) {
-    addContentToContainer(dc, containerId, pathInContainer, userId, groupId, ContainerEntry.fromString(name, content));
+    addContentToContainer(dc, containerId, pathInContainer, userId, groupId, new StringContent(name, content).getContainerEntries());
   }
 
   /**
@@ -122,8 +126,11 @@ public class ContainerUtils {
   /**
    * Adds content to the container, with specified uid/gid
    */
-  public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId,
-      Integer groupId, ContainerEntry... entries) {
+  public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId, Integer groupId, List<ContainerEntry> entries) {
+    addContentToContainer(dc, containerId, pathInContainer, userId, groupId, entries != null ? entries.toArray(new ContainerEntry[entries.size()]) : new ContainerEntry[0]);
+  }
+
+  public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId, Integer groupId, ContainerEntry... entries) {
 
     Set<String> seenDirs = new HashSet<>();
     // Don't add entry for "/", causes issues with tar format.

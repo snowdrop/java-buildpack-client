@@ -20,8 +20,10 @@ import org.slf4j.LoggerFactory;
 
 import dev.snowdrop.buildpack.docker.ContainerEntry;
 import dev.snowdrop.buildpack.docker.ContainerUtils;
+import dev.snowdrop.buildpack.docker.Content;
 import dev.snowdrop.buildpack.docker.DockerClientUtils;
 import dev.snowdrop.buildpack.docker.ImageUtils;
+import dev.snowdrop.buildpack.docker.StringContent;
 import dev.snowdrop.buildpack.docker.ImageUtils.ImageInfo;
 import dev.snowdrop.buildpack.docker.VolumeBind;
 import dev.snowdrop.buildpack.docker.VolumeUtils;
@@ -71,14 +73,15 @@ public class Buildpack {
   private Integer groupId;
 
   Map<String, String> environment = new HashMap<>();
-  List<ContainerEntry> content = new LinkedList<>();
-
+  private List<Content> content = new LinkedList<>();
   private final DockerClient dockerClient;
   private final dev.snowdrop.buildpack.Logger logger;
 
+  private List<ContainerEntry> containerEntries = new LinkedList<>();
+
   public Buildpack(String buildImage, String runImage, String finalImage, Integer pullTimeoutSeconds, String dockerHost,
       boolean useDaemon, String buildCacheVolumeName, boolean removeBuildCacheAfterBuild,
-      String launchCacheVolumeName, boolean removeLaunchCacheAfterBuild, String logLevel, boolean useTimestamps, Map<String, String> environment, List<ContainerEntry> content, DockerClient dockerClient, dev.snowdrop.buildpack.Logger logger) {
+      String launchCacheVolumeName, boolean removeLaunchCacheAfterBuild, String logLevel, boolean useTimestamps, Map<String, String> environment, List<Content> content, DockerClient dockerClient, dev.snowdrop.buildpack.Logger logger) {
     this.buildImage = buildImage != null ? buildImage : DEFAULT_BUILD_IMAGE;
     this.runImage = runImage;
     this.finalImage = finalImage;
@@ -92,7 +95,8 @@ public class Buildpack {
     this.logLevel = logLevel != null ? logLevel : DEFAULT_LOG_LEVEL;
     this.useTimestamps = useTimestamps;
     this.environment = environment != null ? environment : new HashMap<>();
-    this.content = content != null ? content.stream().flatMap(c -> c.getEntries().stream()).collect(Collectors.toList()) : Collections.emptyList();
+    this.content = content;
+    this.containerEntries = content != null ? content.stream().flatMap(c -> c.getContainerEntries().stream()).collect(Collectors.toList()) : Collections.emptyList();
     this.dockerClient = DockerClientUtils.getDockerClient(dockerHost);
     this.logger = logger != null ? logger : new SystemLogger();
     build(this.logger);
@@ -162,14 +166,20 @@ public class Buildpack {
     // add the application to the container. Note we are placing it at /app/content,
     // because the /app mountpoint is mounted such that the user has no perms to create 
     // new content there, but subdirs are ok.
-    ContainerEntry[] appEntries = content.toArray(new ContainerEntry[0]);
+    List<ContainerEntry> appEntries = content
+      .stream()
+      .flatMap(c -> c.getContainerEntries().stream())
+      .collect(Collectors.toList());
+
     ContainerUtils.addContentToContainer(dockerClient, id, APP_VOL_PATH + "/content", userId, groupId, appEntries);
     log.info("- uploaded archive to container at " + APP_VOL_PATH + "/content");
     
     //add the environment entries.
-    ContainerEntry[] envEntries = environment.entrySet().stream().map(e -> { 
-        return ContainerEntry.fromString(e.getKey(), e.getValue()); 
-      }).collect(Collectors.toList()).toArray(new ContainerEntry[] {});
+    List<ContainerEntry> envEntries = environment.entrySet()
+      .stream()
+      .flatMap(e -> new StringContent(e.getKey(), e.getValue()).getContainerEntries().stream())
+      .collect(Collectors.toList());
+
     ContainerUtils.addContentToContainer(dockerClient, id, PLATFORM_VOL_PATH + "/env", userId, groupId, envEntries);
     log.info("- uploaded env to container at " + PLATFORM_VOL_PATH + "/env");  
 
@@ -333,11 +343,11 @@ public class Buildpack {
     this.environment = environment;
   }
 
-  public List<ContainerEntry> getContent() {
+  public List<Content> getContent() {
     return content;
   }
 
-  public void setContent(List<ContainerEntry> content) {
+  public void setContent(List<Content> content) {
     this.content = content;
   }
 
