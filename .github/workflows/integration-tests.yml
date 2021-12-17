@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # 
-name: Build
+name: Integration Tests
+# We need to set these defaults so that .bashrc is called for each step.
+# This is needed so that sdkman can be properly intialized
+defaults:
+  run:
+    shell: bash -ieo pipefail {0}
 
 env:
   MAVEN_ARGS: -B -e
@@ -24,12 +29,13 @@ on:
   pull_request:
 
 jobs:
-  build:
-    name: Java ${{ matrix.java }} Maven
+  integration-tests:
+    name: Package Samples with Java ${{ matrix.java }} and JBang ${{ matrix.jbang }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
         java: [8, 11]
+        jbang: [0.84.2]
     steps:
       - name: Checkout
         uses: actions/checkout@v2.3.4
@@ -44,6 +50,18 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           distribution: 'adopt'
-      - name: Build Project
-        run: mvn ${MAVEN_ARGS} clean install
-        
+      - name: Setup sdkman
+        run: |
+          curl -s "https://get.sdkman.io" | bash
+          source "$HOME/.sdkman/bin/sdkman-init.sh"
+          sdkman_auto_answer=false
+          sdkman_selfupdate_enable=false
+      - name: Setup jbang
+        run: |
+          sdk install jbang ${{matrix.jbang}}
+          sdk default jbang ${{matrix.jbang}}
+      - name: Integration Tests
+        run: |
+          cd samples/hello-spring
+          ./pack.java
+          
