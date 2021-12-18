@@ -40,7 +40,7 @@ public class StringContent implements Content {
       }
 
       @Override
-      public ContentSupplier getContentSupplier() {
+      public DataSupplier getDataSupplier() {
         return () -> new ByteArrayInputStream(content.getBytes());
       }
     });

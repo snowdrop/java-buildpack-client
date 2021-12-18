@@ -25,7 +25,7 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Volume;
 
-import dev.snowdrop.buildpack.docker.ContainerEntry.ContentSupplier;
+import dev.snowdrop.buildpack.docker.ContainerEntry.DataSupplier;
 import dev.snowdrop.buildpack.BuildpackException;
 
 
@@ -175,13 +175,13 @@ public class ContainerUtils {
               tae.setUserId(uid);
               tae.setGroupId(gid);
               tout.putArchiveEntry(tae);
-              ContentSupplier cs = ve.getContentSupplier();
+              DataSupplier cs = ve.getDataSupplier();
               if(cs==null) {
-                throw new IOException("Error ContentSupplier was not provided");
+                throw new IOException("Error DataSupplier was not provided");
               }
-              try (InputStream is = ve.getContentSupplier().getData();) {
+              try (InputStream is = ve.getDataSupplier().getData();) {
                 if(is==null) {
-                  throw new IOException("Error ContentSupplier gave null for getData");
+                  throw new IOException("Error DataSupplier gave null for getData");
                 }
                 
                 copy(is, tout);

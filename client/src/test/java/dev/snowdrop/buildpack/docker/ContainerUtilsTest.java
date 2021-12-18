@@ -252,7 +252,7 @@ class ContainerUtilsTest {
         return 0;
       }
 
-      public ContentSupplier getContentSupplier() {
+      public DataSupplier getDataSupplier() {
         return null;
       }
     };
@@ -281,7 +281,7 @@ class ContainerUtilsTest {
         throw BuildpackException.launderThrowable(new IOException("Test"));
       }
 
-      public ContentSupplier getContentSupplier() {
+      public DataSupplier getDataSupplier() {
         return null;
       }
     };
@@ -293,7 +293,7 @@ class ContainerUtilsTest {
   }
 
   @Test
-  void addContentToContainerViaMissingContentSupplier(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc)
+  void addContentToContainerViaMissingDataSupplier(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc)
       {
 
     String containerId = "id";
@@ -311,7 +311,7 @@ class ContainerUtilsTest {
         return 4;
       }
 
-      public ContentSupplier getContentSupplier() {
+      public DataSupplier getDataSupplier() {
         return null;
       }
     };
@@ -322,7 +322,7 @@ class ContainerUtilsTest {
   }
 
   @Test
-  void addContentToContainerViaBrokenContentSupplier(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
+  void addContentToContainerViaBrokenDataSupplier(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
 
     String containerId = "id";
 
@@ -339,8 +339,8 @@ class ContainerUtilsTest {
         return 4;
       }
 
-      public ContentSupplier getContentSupplier() {
-        return new ContentSupplier() {
+      public DataSupplier getDataSupplier() {
+        return new DataSupplier() {
           public InputStream getData() {
             throw BuildpackException.launderThrowable(new IOException("Test"));
           }
@@ -354,7 +354,7 @@ class ContainerUtilsTest {
   }
 
   @Test
-  void addContentToContainerViaContentSupplierWithNullData(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc)
+  void addContentToContainerViaDataSupplierWithNullData(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc)
       {
 
     String containerId = "id";
@@ -372,8 +372,8 @@ class ContainerUtilsTest {
         return 4;
       }
 
-      public ContentSupplier getContentSupplier() {
-        return new ContentSupplier() {
+      public DataSupplier getDataSupplier() {
+        return new DataSupplier() {
           public InputStream getData() {
             return null;
           }

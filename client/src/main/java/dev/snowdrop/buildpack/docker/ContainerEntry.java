@@ -14,10 +14,10 @@ public interface ContainerEntry {
 
   public long getSize();
 
-  public ContentSupplier getContentSupplier();
+  public DataSupplier getDataSupplier();
 
   @FunctionalInterface
-  public interface ContentSupplier {
+  public interface DataSupplier {
     InputStream getData();
   }
 }

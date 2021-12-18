@@ -1,7 +1,6 @@
 package dev.snowdrop.buildpack;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -45,8 +44,6 @@ public class Buildpack {
   private final String OUTPUT_VOL_PATH = "/out";
   private final String PLATFORM_VOL_PATH = "/platform";
 
-
-
   private static final String DEFAULT_BUILD_IMAGE = "paketobuildpacks/builder:base";
   private static final Integer DEFAULT_PULL_TIMEOUT = 60;
   private static final String DEFAULT_LOG_LEVEL = "debug";
@@ -77,8 +74,6 @@ public class Buildpack {
   private final DockerClient dockerClient;
   private final dev.snowdrop.buildpack.Logger logger;
 
-  private List<ContainerEntry> containerEntries = new LinkedList<>();
-
   public Buildpack(String buildImage, String runImage, String finalImage, Integer pullTimeoutSeconds, String dockerHost,
       boolean useDaemon, String buildCacheVolumeName, boolean removeBuildCacheAfterBuild,
       String launchCacheVolumeName, boolean removeLaunchCacheAfterBuild, String logLevel, boolean useTimestamps, Map<String, String> environment, List<Content> content, DockerClient dockerClient, dev.snowdrop.buildpack.Logger logger) {
@@ -96,7 +91,6 @@ public class Buildpack {
     this.useTimestamps = useTimestamps;
     this.environment = environment != null ? environment : new HashMap<>();
     this.content = content;
-    this.containerEntries = content != null ? content.stream().flatMap(c -> c.getContainerEntries().stream()).collect(Collectors.toList()) : Collections.emptyList();
     this.dockerClient = DockerClientUtils.getDockerClient(dockerHost);
     this.logger = logger != null ? logger : new SystemLogger();
     build(this.logger);

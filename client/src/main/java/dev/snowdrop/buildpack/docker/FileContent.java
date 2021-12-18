@@ -80,9 +80,9 @@ public class FileContent implements Content {
         }
 
         @Override
-        public ContentSupplier getContentSupplier() {
+        public DataSupplier getDataSupplier() {
           Path p = file.toPath();
-          return new ContentSupplier() {
+          return new DataSupplier() {
             public InputStream getData() {
               try {
                 return new BufferedInputStream(Files.newInputStream(p));
