@@ -10,10 +10,14 @@
 
     <groupId>dev.snowdrop</groupId>
     <artifactId>buildpack-client</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <packaging>jar</packaging>
     <name>Snowdrop :: Java Buildpack Client :: Client</name>
 
     <dependencies>
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-api</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java-core</artifactId>
@@ -30,6 +34,11 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>io.sundr</groupId>
+          <artifactId>builder-annotations</artifactId>
+          <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

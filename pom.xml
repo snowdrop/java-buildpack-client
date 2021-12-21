@@ -55,6 +55,7 @@
     <version.slf4j>1.7.30</version.slf4j>
     <version.commons-compress>1.20</version.commons-compress>
     <version.jackson>2.12.3</version.jackson>
+    <version.sundrio>0.80.0</version.sundrio>
     <version.lombok>1.18.12</version.lombok>
     <version.findbugs>3.0.1u2</version.findbugs>
     <version.junit>5.4.0</version.junit>
@@ -80,6 +81,11 @@
     <dependencies>
       <dependency>
         <groupId>com.github.docker-java</groupId>
+        <artifactId>docker-java-api</artifactId>
+        <version>${version.docker-java}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.docker-java</groupId>
         <artifactId>docker-java-core</artifactId>
         <version>${version.docker-java}</version>
       </dependency>
@@ -103,6 +109,12 @@
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
         <version>${version.lombok}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.sundr</groupId>
+        <artifactId>builder-annotations</artifactId>
+        <version>${version.sundrio}</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
@@ -136,6 +148,7 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
   <build>
     <plugins>
       <plugin>

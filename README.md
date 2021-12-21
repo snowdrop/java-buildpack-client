@@ -14,7 +14,7 @@ of the build to be performed.
 
 A very simple build can be performed with as little as.. 
 ```
-BuildpackBuilder.get()
+Buildpack.builder()
     .withContent(new File("/home/user/java-project"))
     .withFinalImage("test/testimage:latest")
     .build();
@@ -47,9 +47,6 @@ passed, allowing for sparse source directories, or multiple project dirs to be c
 - InputStream Content, with path. Similar to String, except with data pulled from an InputStream.
 - [`ContainerEntry`](src/main/java/dev/snowdrop/buildpack/docker/ContainerEntry.java) interface, for custom integration.
 
-Output from the Builpack execution is available via the `BuildpackBuilder.LogReader` interface, which can be optionally be passed 
-to the `build` invocation. The `build` signature that doesn't accept a `LogReader` supplies it's own default reader that will pass
-messages to stdout/stderr.
 
 Build/RunImages will be pulled as required. 
 
@@ -59,19 +56,10 @@ docker socket is extracted and used during the build phase. If unset, this defau
 
 ## How To:
 
-Want to try out this project? well, it's not in maven central yet, and the packages/api are not fixed in stone yet, so be aware! But here are the basic steps to get you up and running. 
+Want to try out this project? The packages/api are not fixed in stone yet, so be aware! But here are the basic steps to get you up and running. 
 
-1. Add Jitpack.io repository to your project's pom. 
-```
-	<repositories>
-		<repository>
-		    <id>jitpack.io</id>
-		    <url>https://jitpack.io</url>
-		</repository>
-	</repositories>
-```
 
-2. Add this project as a dependency via jitpack. 
+1. Add this project as a dependency via jitpack. 
 ```
         <dependency>
             <groupId>dev.snowdrop</groupId>
@@ -80,30 +68,30 @@ Want to try out this project? well, it's not in maven central yet, and the packa
         </dependency> 
 ```
 
-3. Instantiate a BuildpackBuilder
+2. Instantiate a BuildpackBuilder
 ```
-    BuildpackBuilder bpb = BuildpackBuilder.get();
-```
-
-4. Define the content to be built..
-```
-    bpb = bpb.withContent(new File("/path/to/the/project/to/build));
+    BuildpackBuilder bpb = Buildpack.builder();
 ```
 
-5. Configure the name/tags for the image to create
+3. Define the content to be built..
+```
+    bpb = bpb.addNewFileContent(new File("/path/to/the/project/to/build));
+```
+
+4. Configure the name/tags for the image to create
 ```
     bpb = bpb.withFinalImage("myorg/myimage:mytag");
 ```
 
-6. Invoke the build
+5. Invoke the build
 ```
     bpb.build();
 ```
 
 Or.. combine all the above steps into a single callchain.. 
 ```
-BuildpackBuilder.get()
-    .withContent(new File("/path/to/the/project/to/build))
+Buildpack.builder()
+    .withFileContent(new File("/path/to/the/project/to/build))
     .withFinalImage("myorg/myimage:mytag")
     .build();
 ```
@@ -113,6 +101,65 @@ There are many more ways to customize & configure the BuildpackBuilder, take a l
 A demo project has been created to play with the Java `BuildpackBuilder` [here](https://github.com/snowdrop/java-buildpack-demo) :-)
 
 Most likely if you are using this to integrate to existing tooling, you will want to supply a custom LogReader to receive the messages output by BuildPacks during the build. You may also want to associate cache names to a project, to enable faster rebuilds for a given project. 
+
+## Logging
+
+Output from the Buildpack execution is available via the `dev.snowdrop.buildpack.Logger` interface, which can be optionally be passed using the builder.
+At the moment two kinds of logger are supported:
+
+- SystemLogger (default)
+- Slf4jLogger
+
+Both can be configured using the builder:
+
+```java
+      Buildpack.builder()
+        .withContent(new File("."))
+        .withFinalImage("test/my-image:latest")
+        .withLogger(new SystemLogger())
+        .build();
+
+```
+
+or 
+
+```java
+      Buildpack.builder()
+        .withContent(new File("."))
+        .withFinalImage("test/my-image:latest")
+        .withLogger(new Slf4jLogger())
+        .build();
+```
+
+
+### Inline Logger configuration
+
+The builder DSL supports inlining `Logger` configuration:
+
+```java
+
+      Buildpack.builder()
+        .withContent(new File("."))
+        .withFinalImage("test/my-image:latest")
+        .withNewSystemLogger(false) //Explicitly disables ansi colors
+        .build();
+
+```
+
+The above statement configures system logger with disabled ansi colors.
+
+Similarly, with `Slf4jLogger` one can inline the name of the logger:
+
+```java
+
+      Buildpack.builder()
+        .withContent(new File("."))
+        .withFinalImage("test/my-image:latest")
+        .withNewSlf4jLogger(MyApp.class.getCanonicalName()) //Explicitly specify the Logger
+        .build();
+
+```
+
 
 
 ## Using the buildpack client with jbang
@@ -133,14 +180,10 @@ import dev.snowdrop.buildpack.*;
 public class pack {
 
     public static void main(String... args) {
-      try {
-      BuildpackBuilder.get()
+      Buildpack.builder()
         .withContent(new File("."))
         .withFinalImage("test/my-image:latest")
-        .build(new LogRelay());
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+        .build();
     }
 }
 

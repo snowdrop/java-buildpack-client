@@ -24,8 +24,11 @@ public class DockerClientUtils {
    * for other platforms, and we may want a way to configure authentication etc.
    */
   public static DockerClient getDockerClient(String dockerHost) {
-    log.debug("Using dockerhost " + dockerHost);
+    if (dockerHost == null || dockerHost.isEmpty()) {
+      return getDockerClient(getDockerHost());
+    }
 
+    log.debug("Using dockerhost " + dockerHost);
     DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
         .withDockerHost(dockerHost)
         .build();
