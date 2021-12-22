@@ -94,12 +94,12 @@
         <groupId>com.github.docker-java</groupId>
         <artifactId>docker-java-transport-httpclient5</artifactId>
         <version>${version.docker-java}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-simple</artifactId>
-        <version>${version.slf4j}</version>
-        <scope>runtime</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>org.checkerframework</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>

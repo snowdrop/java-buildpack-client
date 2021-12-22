@@ -1,6 +1,6 @@
 ///usr/bin/env jbang "$0" "$@" ; exit $?
 
-//DEPS dev.snowdrop:buildpack-client:0.0.3
+//DEPS dev.snowdrop:buildpack-client:0.0.4-SNAPSHOT
 import java.io.File;
 import dev.snowdrop.buildpack.*;
 import dev.snowdrop.buildpack.docker.*;
