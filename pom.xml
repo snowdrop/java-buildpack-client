@@ -5,6 +5,7 @@
   <version>0.0.3-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Snowdrop :: Java Buildpack Client :: Project</name>
+  <description>A Buildpack client implementation written in Java</description>
 
   <url>https://snowdrop.dev</url>
   <inceptionYear>2020</inceptionYear>
