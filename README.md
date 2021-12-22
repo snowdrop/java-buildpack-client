@@ -64,7 +64,7 @@ Want to try out this project? The packages/api are not fixed in stone yet, so be
         <dependency>
             <groupId>dev.snowdrop</groupId>
             <artifactId>buildpack-client</artifactId>
-            <version>x.y.z-SNAPSHOT</version>
+            <version>0.0.3</version>
         </dependency> 
 ```
 
@@ -171,7 +171,7 @@ So, you can drop the following file in your project:
 ```java
 ///usr/bin/env jbang "$0" "$@" ; exit $?
 
-//DEPS dev.snowdrop:buildpack-client:0.0.2-SNAPSHOT
+//DEPS dev.snowdrop:buildpack-client:0.0.3
 import static java.lang.System.*;
 
 import java.io.File;
