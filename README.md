@@ -1,18 +1,18 @@
-# java-buildpack-client
+# Java buildpack Client
 
 ![Build](https://github.com/snowdrop/java-buildpack-client/actions/workflows/build.yml/badge.svg)
 
 
-Prototype of a simple buildpack (https://buildpacks.io/) client for java.. 
+Prototype of a simple buildpack (https://buildpacks.io/) client for java.
 
 This project represents a simple implementation of the buildpack platform spec, 
 and can be used to build projects using specified buildpacks. 
 
-The client uses the combined `creator` lifecycle phase from from the buildpack to 
+The client uses the combined `creator` lifecycle phase from the buildpack to 
 drive the entire build. A fluent interface is provided to allow creation & configuration
 of the build to be performed. 
 
-A very simple build can be performed with as little as.. 
+A very simple build can be performed with as little as.
 ```
 Buildpack.builder()
     .withContent(new File("/home/user/java-project"))
@@ -22,7 +22,7 @@ Buildpack.builder()
 
 This will use the default builder image from (https://packeto.io) to handle the build
 of the project in the `/home/user/java-project` folder. The resulting image will 
-be stored in the local docker daemon as `test/testimage:latest`
+be stored in the local docker daemon as `test/testimage:latest`.
 
 ## Overview
 
@@ -34,7 +34,7 @@ The [`BuildpackBuilder`](src/main/java/dev/snowdrop/buildpack/BuildpackBuilder.j
 - `creator` debug level can be set
 - pull timeout can be configured in seconds
 
-Options exist, but are not (yet) active, for.. 
+Options exist, but are not (yet) active, for.
 
 - use docker registry instead of daemon (requires additional auth config, not implemented yet)
 - passing Env content to the build stage (not implemented yet)
@@ -88,7 +88,7 @@ Want to try out this project? The packages/api are not fixed in stone yet, so be
     bpb.build();
 ```
 
-Or.. combine all the above steps into a single callchain.. 
+Or combine all the above steps into a single callchain. 
 ```
 Buildpack.builder()
     .withFileContent(new File("/path/to/the/project/to/build))
