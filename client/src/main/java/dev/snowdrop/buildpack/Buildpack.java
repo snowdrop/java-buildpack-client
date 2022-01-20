@@ -49,7 +49,7 @@ public class Buildpack {
   private static final String DEFAULT_LOG_LEVEL = "debug";
 
   // defaults for images
-  private final String buildImage;
+  private final String builderImage;
   private final String finalImage;
   private String runImage;
 
@@ -74,10 +74,10 @@ public class Buildpack {
   private final DockerClient dockerClient;
   private final dev.snowdrop.buildpack.Logger logger;
 
-  public Buildpack(String buildImage, String runImage, String finalImage, Integer pullTimeoutSeconds, String dockerHost,
+  public Buildpack(String builderImage, String runImage, String finalImage, Integer pullTimeoutSeconds, String dockerHost,
       boolean useDaemon, String buildCacheVolumeName, boolean removeBuildCacheAfterBuild,
       String launchCacheVolumeName, boolean removeLaunchCacheAfterBuild, String logLevel, boolean useTimestamps, Map<String, String> environment, List<Content> content, DockerClient dockerClient, dev.snowdrop.buildpack.Logger logger) {
-    this.buildImage = buildImage != null ? buildImage : DEFAULT_BUILD_IMAGE;
+    this.builderImage = builderImage != null ? builderImage : DEFAULT_BUILD_IMAGE;
     this.runImage = runImage;
     this.finalImage = finalImage;
     this.pullTimeoutSeconds = pullTimeoutSeconds != null ? pullTimeoutSeconds : DEFAULT_PULL_TIMEOUT;
@@ -132,7 +132,7 @@ public class Buildpack {
                       "-log-level", this.logLevel, 
                       "-skip-restore", finalImage };
 
-    // TODO: read metadata from buildImage to confirm lifecycle version/platform
+    // TODO: read metadata from builderImage to confirm lifecycle version/platform
     // version compatibility.
 
     // TODO: add labels for container for creator etc (as per spec)
@@ -143,8 +143,8 @@ public class Buildpack {
       dockerSocket = dockerHost.substring("unix://".length());
     }
 
-    // create a container using buildImage that will invoke the creator process
-    String id = ContainerUtils.createContainer(dockerClient, buildImage, Arrays.asList(args),
+    // create a container using builderImage that will invoke the creator process
+    String id = ContainerUtils.createContainer(dockerClient, builderImage, Arrays.asList(args),
         new VolumeBind(buildCacheVolume, BUILD_VOL_PATH), new VolumeBind(launchCacheVolume, LAUNCH_VOL_PATH),
         new VolumeBind(applicationVolume, APP_VOL_PATH), new VolumeBind(dockerSocket, "/var/run/docker.sock"),
         new VolumeBind(outputVolume, OUTPUT_VOL_PATH));
@@ -215,8 +215,8 @@ public class Buildpack {
   
   private void prep() {
 
-    ImageUtils.pullImages(dockerClient, pullTimeoutSeconds, buildImage);
-    ImageInfo ii = ImageUtils.inspectImage(dockerClient, buildImage);
+    ImageUtils.pullImages(dockerClient, pullTimeoutSeconds, builderImage);
+    ImageInfo ii = ImageUtils.inspectImage(dockerClient, builderImage);
 
     // read the userid/groupid for the buildpack from it's env.
     for (String s : ii.env) {
@@ -259,7 +259,7 @@ public class Buildpack {
     ImageUtils.pullImages(dockerClient, pullTimeoutSeconds, runImage);
     
     log.info("Build configured with..");
-    log.info("- build image : "+buildImage);
+    log.info("- build image : "+builderImage);
     log.info("- run image : "+runImage);
   }
 
@@ -281,8 +281,8 @@ public class Buildpack {
         .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
   }
 
-  public String getBuildImage() {
-    return buildImage;
+  public String getBuilderImage() {
+    return builderImage;
   }
 
   public String getRunImage() {
