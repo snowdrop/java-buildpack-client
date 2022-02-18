@@ -1,7 +1,7 @@
 # Java buildpack Client
 
 ![Build](https://github.com/snowdrop/java-buildpack-client/actions/workflows/build.yml/badge.svg)
-
+[![Maven Central](https://img.shields.io/maven-central/v/dev.snowdrop/buildpack-client.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22dev.snowdrop:%22buildpack-client%22)
 
 Prototype of a simple buildpack (https://buildpacks.io/) client for java.
 
