@@ -7,10 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.GZIPOutputStream;
 
@@ -62,6 +59,9 @@ public class ContainerUtils {
     // TODO: this a workaround for a bug in current buildpack
     // https://github.com/buildpacks/lifecycle/issues/339
     ccc.withEnv("CNB_PLATFORM_API=0.4", "CNB_REGISTRY_AUTH={}");
+
+    // prevent SELinux issues when mounting docker socket
+    ccc.getHostConfig().withSecurityOpts(Collections.singletonList("label=disable"));
 
     if (command != null) {
       ccc.withCmd(command);
