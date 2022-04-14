@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>dev.snowdrop</groupId>
   <artifactId>buildpack-client-project</artifactId>
-  <version>0.0.6</version>
+  <version>0.0.7-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Snowdrop :: Java Buildpack Client :: Project</name>
   <description>A Buildpack client implementation written in Java</description>
@@ -37,7 +37,7 @@
     <connection>scm:git:git@github.com:snowdrop/java-buildpack-client.git</connection>
     <developerConnection>scm:git:git@github.com:snowdrop/java-buildpack-client.git</developerConnection>
     <url>http://github.com/snowdrop/java-buildpack-client</url>
-    <tag>0.0.6</tag>
+    <tag>${project.version}</tag>
   </scm>
 
   <distributionManagement>
