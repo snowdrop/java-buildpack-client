@@ -74,6 +74,8 @@ public class Buildpack {
   private final DockerClient dockerClient;
   private final dev.snowdrop.buildpack.Logger logger;
 
+  private final int exitCode;
+
   public Buildpack(String builderImage, String runImage, String finalImage, Integer pullTimeoutSeconds, String dockerHost,
       boolean useDaemon, String buildCacheVolumeName, boolean removeBuildCacheAfterBuild,
       String launchCacheVolumeName, boolean removeLaunchCacheAfterBuild, String logLevel, boolean useTimestamps, Map<String, String> environment, List<Content> content, DockerClient dockerClient, dev.snowdrop.buildpack.Logger logger) {
@@ -93,7 +95,7 @@ public class Buildpack {
     this.content = content;
     this.dockerClient = DockerClientUtils.getDockerClient(dockerHost);
     this.logger = logger != null ? logger : new SystemLogger();
-    build(this.logger);
+    this.exitCode = build(this.logger);
  }
 
   private int build(dev.snowdrop.buildpack.Logger logger) {
@@ -352,6 +354,10 @@ public class Buildpack {
 
   public dev.snowdrop.buildpack.Logger getLogger() {
     return logger;
+  }
+
+  public int getExitCode() {
+    return this.exitCode;
   }
   
 }
