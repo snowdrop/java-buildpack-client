@@ -10,7 +10,8 @@ public class pack {
     public static void main(String... args) {
       Buildpack.builder()
         .addNewFileContent(new File("."))
-        .withFinalImage("snowdrop/hello-spring:latest")
+        .withBuildImage("redhat/buildpacks-builder-quarkus-jvm:latest")
+        .withFinalImage("snowdrop/hello-quarkus:latest")
         .build();
     }
 }
