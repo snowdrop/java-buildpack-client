@@ -1,8 +1,9 @@
 package dev.snowdrop.buildpack.docker;
 
-import org.apache.commons.lang.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import dev.snowdrop.buildpack.utils.OperatingSytem;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -45,13 +46,15 @@ public class DockerClientUtils {
 
   public static String getDockerHost() {
     String dockerHost = System.getenv("DOCKER_HOST");
-    if (dockerHost == null) {
-      if (SystemUtils.IS_OS_WINDOWS) {
-        dockerHost = "npipe:////./pipe/docker_engine";
-      } else {
-        dockerHost = "unix:///var/run/docker.sock";
-      }
+    if (dockerHost != null && dockerHost.isEmpty())  {
+      return dockerHost;
     }
-    return dockerHost;
+
+    switch (OperatingSytem.getOperationSystem()) {
+    case WIN:
+      return "npipe:////./pipe/docker_engine";
+    default:
+      return "unix:///var/run/docker.sock";
+    }
   }
 }
