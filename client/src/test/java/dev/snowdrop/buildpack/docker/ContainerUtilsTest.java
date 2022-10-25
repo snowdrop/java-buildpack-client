@@ -256,6 +256,8 @@ class ContainerUtilsTest {
         return null;
       }
     };
+
+    @SuppressWarnings("unused")
     Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
@@ -285,6 +287,8 @@ class ContainerUtilsTest {
         return null;
       }
     };
+
+    @SuppressWarnings("unused")
     Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
@@ -315,6 +319,8 @@ class ContainerUtilsTest {
         return null;
       }
     };
+
+    @SuppressWarnings("unused")
     Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
@@ -347,6 +353,8 @@ class ContainerUtilsTest {
         };
       }
     };
+
+    @SuppressWarnings("unused")
     Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
@@ -380,6 +388,8 @@ class ContainerUtilsTest {
         };
       }
     };
+
+    @SuppressWarnings("unused")
     Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
