@@ -16,7 +16,7 @@ public class Slf4jLogger implements dev.snowdrop.buildpack.Logger {
     this.log = LoggerFactory.getLogger(name);
   }
 
-  public Slf4jLogger(Class c) {
+  public Slf4jLogger(Class<?> c) {
     this.name = c.getCanonicalName();
     this.log = LoggerFactory.getLogger(c);
   }
