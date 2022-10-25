@@ -8,9 +8,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.WaitContainerResultCallback;
 
@@ -24,9 +22,12 @@ import dev.snowdrop.buildpack.docker.DockerClientUtils;
 import dev.snowdrop.buildpack.docker.ImageUtils;
 import dev.snowdrop.buildpack.docker.StringContent;
 import dev.snowdrop.buildpack.docker.ImageUtils.ImageInfo;
+import dev.snowdrop.buildpack.utils.BuildpackMetadata;
 import dev.snowdrop.buildpack.docker.VolumeBind;
 import dev.snowdrop.buildpack.docker.VolumeUtils;
 import io.sundr.builder.annotations.Buildable;
+import lombok.Data;
+import lombok.ToString;
 
 @Buildable(generateBuilderPackage=true, builderPackage="dev.snowdrop.buildpack.builder")
 public class Buildpack {
@@ -47,6 +48,14 @@ public class Buildpack {
   private static final String DEFAULT_BUILD_IMAGE = "paketobuildpacks/builder:base";
   private static final Integer DEFAULT_PULL_TIMEOUT = 60;
   private static final String DEFAULT_LOG_LEVEL = "debug";
+
+  //names of the volumes during runtime.
+  private final String buildCacheVolume;
+  private final String launchCacheVolume;
+  private final String applicationVolume;
+  private final String outputVolume;
+  private final String platformVolume;
+
 
   // defaults for images
   private final String builderImage;
@@ -96,31 +105,36 @@ public class Buildpack {
     this.dockerClient = DockerClientUtils.getDockerClient(dockerHost);
     this.logger = logger != null ? logger : new SystemLogger();
     this.exitCode = build(this.logger);
- }
+
+    buildCacheVolume = buildCacheVolumeName == null ? "buildpack-build-" + randomString(10) : buildCacheVolumeName;
+    launchCacheVolume = launchCacheVolumeName == null ? "buildpack-launch-" + randomString(10) : launchCacheVolumeName;
+    applicationVolume = "buildpack-app-" + randomString(10);
+    outputVolume = "buildpack-output-" + randomString(10);
+    platformVolume = "buildpack-platform-" + randomString(10);
+  }
+
+  @ToString(includeFieldNames=true)
+  @Data(staticConstructor="of")
+  private static class ContainerStatus {
+    final int rc;
+    final String containerId;
+  }
 
   private int build(dev.snowdrop.buildpack.Logger logger) {
+
     log.info("Buildpack build invoked, preparing environment...");
-    
     prep();
 
-    String buildCacheVolume = buildCacheVolumeName == null ? "buildpack-build-" + randomString(10) : buildCacheVolumeName;
-    String launchCacheVolume = launchCacheVolumeName == null ? "buildpack-launch-" + randomString(10) : launchCacheVolumeName;
+    ContainerStatus cs = invokeCreator();
+   
+    log.info("Buildpack build complete, cleaning up...");
+    tidyUp(cs.containerId);
+    return cs.rc;
+  }
 
-    String applicationVolume = "buildpack-app-" + randomString(10);
-    String outputVolume = "buildpack-output-" + randomString(10);
-    String platformVolume = "buildpack-platform-" + randomString(10);
-
-    // create all the volumes we plan to use =)
-    VolumeUtils.createVolumeIfRequired(dockerClient, buildCacheVolume);
-    VolumeUtils.createVolumeIfRequired(dockerClient, launchCacheVolume);
-    VolumeUtils.createVolumeIfRequired(dockerClient, applicationVolume);
-    VolumeUtils.createVolumeIfRequired(dockerClient, outputVolume);
-    VolumeUtils.createVolumeIfRequired(dockerClient, platformVolume);
-    log.info("- build volumes created");
-    
+  private ContainerStatus invokeCreator(){
+ 
     // configure our call to 'creator' which will do all the work.
-    String[] xargs = { "bash", "-c", "ls -alR "+PLATFORM_VOL_PATH };
-
     String[] args = { "/cnb/lifecycle/creator", 
                       "-uid", "" + userId, 
                       "-gid", "" + groupId, 
@@ -194,11 +208,23 @@ public class Buildpack {
 
     // wait for the container to complete, and retrieve the exit code.
     int rc = dockerClient.waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
-    log.info("Buildpack build complete, with exit code " + rc);
+    log.info("Buildpack container complete, with exit code " + rc);    
 
-    // tidy up. remove container.
-    ContainerUtils.removeContainer(dockerClient, id);
+    return ContainerStatus.of(rc,id);
+  }
+  
+  private void createVolumes(){
+    // create all the volumes we plan to use =)
+    VolumeUtils.createVolumeIfRequired(dockerClient, buildCacheVolume);
+    VolumeUtils.createVolumeIfRequired(dockerClient, launchCacheVolume);
+    VolumeUtils.createVolumeIfRequired(dockerClient, applicationVolume);
+    VolumeUtils.createVolumeIfRequired(dockerClient, outputVolume);
+    VolumeUtils.createVolumeIfRequired(dockerClient, platformVolume);
 
+    log.info("- build volumes created");
+  }
+
+  private void removeVolumes(){
     // remove volumes
     // (note when/if we persist the cache between builds, we'll be more selective
     // here over what we remove)
@@ -212,11 +238,16 @@ public class Buildpack {
     VolumeUtils.removeVolume(dockerClient, outputVolume);
     VolumeUtils.removeVolume(dockerClient, platformVolume);
 
-    return rc;
+    log.info("- build volumes tidied up");
   }
-  
+
+  /**
+   * Prep for a build.. this should pull the builder/runImage, and configure
+   * the uid/gid to be used for the build.
+   */
   private void prep() {
 
+    // pull and inspect the builderImage to obtain builder metadata.
     ImageUtils.pullImages(dockerClient, pullTimeoutSeconds, builderImage);
     ImageInfo ii = ImageUtils.inspectImage(dockerClient, builderImage);
 
@@ -235,46 +266,26 @@ public class Buildpack {
     
     // pull the buildpack metadata json.
     String metadataJson = ii.labels.get("io.buildpacks.builder.metadata");
-    ObjectMapper om = new ObjectMapper();
-    om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    try {
-      JsonNode root = om.readTree(metadataJson);
-      // read the buildpacks recommended runImage
-      String ri = getValue(root, "stack/runImage/image");
-      // if caller didn't set runImage, use one from buildPack.
-      if (runImage == null) {
-        if (ri == null) {
-          throw new Exception("No runImage specified, and builderImage is missing metadata declaration");
-        } else {
-          if (ri.startsWith("index.docker.io/")) {
-            ri = ri.substring("index.docker.io/".length());
-            ri = "docker.io/" + ri;
-          }
-          runImage = ri;
-        }
-      }
-    } catch (Exception e) {
-      throw BuildpackException.launderThrowable(e);
-    }
+    runImage = BuildpackMetadata.getRunImageFromMetadata(metadataJson, runImage);
 
-    // pull the runImage.
+    // pull the runImage, so it will be available for the build.
     ImageUtils.pullImages(dockerClient, pullTimeoutSeconds, runImage);
+
+    // create the volumes.
+    createVolumes();
     
+    // log out current config.
     log.info("Build configured with..");
     log.info("- build image : "+builderImage);
     log.info("- run image : "+runImage);
+    log.info("- uid:"+userId+" gid:"+groupId);
   }
 
-  private String getValue(JsonNode root, String path) {
-    String[] parts = path.split("/");
-    JsonNode next = root.get(parts[0]);
-    if (next != null && parts.length > 1) {
-      return getValue(next, path.substring(path.indexOf("/") + 1));
-    }
-    if (next == null) {
-      return null;
-    }
-    return next.asText();
+  private void tidyUp(String containerIdToClean) {
+    // tidy up. remove container.
+    ContainerUtils.removeContainer(dockerClient, containerIdToClean);
+    log.info("- build container tidied up");
+    removeVolumes();
   }
 
   // util method for random suffix.
@@ -346,7 +357,6 @@ public class Buildpack {
   public void setContent(List<Content> content) {
     this.content = content;
   }
-
 
   public DockerClient getDockerClient() {
     return dockerClient;
