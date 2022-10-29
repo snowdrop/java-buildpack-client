@@ -60,7 +60,7 @@
     <version.lombok>1.18.22</version.lombok>
     <version.findbugs>3.0.1u2</version.findbugs>
     <version.junit>5.4.0</version.junit>
-    <version.mockito>3.7.7</version.mockito>
+    <version.mockito>3.12.4</version.mockito>
 
     <!-- Maven Plugin Versions -->
     <version.maven-compiler-plugin>3.8.1</version.maven-compiler-plugin>
