@@ -1,5 +1,7 @@
 package dev.snowdrop.buildpack.phases;
 
+import java.util.Arrays;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.dockerjava.api.command.WaitContainerResultCallback;
@@ -19,26 +21,34 @@ public class Creator implements LifecyclePhase{
     @Override
     public ContainerStatus runPhase(dev.snowdrop.buildpack.Logger logger, boolean useTimestamps) {
 
+        // TODO: make daemon a config option.
+        boolean useDaemon = true;
+
         // configure our call to 'creator' which will do all the work.
         String[] args = { "/cnb/lifecycle/creator", 
                         "-uid", "" + factory.buildUserId, 
                         "-gid", "" + factory.buildGroupId, 
                         "-cache-dir", LifecyclePhaseFactory.BUILD_VOL_PATH,
-                        "-app", LifecyclePhaseFactory.APP_VOL_PATH + "/content", 
+                        "-app", LifecyclePhaseFactory.APP_VOL_PATH + LifecyclePhaseFactory.APP_PATH_PREFIX, 
                         "-layers", LifecyclePhaseFactory.OUTPUT_VOL_PATH, 
                         "-platform", LifecyclePhaseFactory.PLATFORM_VOL_PATH, 
                         "-run-image", factory.runImageName, 
                         "-launch-cache", LifecyclePhaseFactory.LAUNCH_VOL_PATH, 
-                        "-daemon", // TODO: non daemon support.
                         "-log-level", factory.buildLogLevel, 
-                        "-skip-restore", factory.finalImageName };
+                        "-skip-restore", 
+                        factory.finalImageName };
 
-        // TODO: read metadata from builderImage to confirm lifecycle version/platform
-        // version compatibility.
+        //if using daemon, inject daemon arg before final image name.
+        if(useDaemon){
+            int len = args.length;
+            args = Arrays.copyOf(args, len+1);
+            args[len] = args[len-1];
+            args[len-1] = "-daemon";
+        }
 
         // TODO: add labels for container for creator etc (as per spec)
     
-        String id = factory.getContainerForPhase(args);
+        String id = factory.getContainerForPhase(args, (useDaemon ? 0 : factory.buildUserId));
         log.info("- build container id " + id);
 
         // launch the container!

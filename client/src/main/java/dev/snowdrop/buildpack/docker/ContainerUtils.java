@@ -9,6 +9,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -40,6 +41,13 @@ public class ContainerUtils {
 
   public static String createContainer(DockerClient dc, String imageReference, List<String> command,
       VolumeBind... volumes) {
+        return createContainer(dc, imageReference, command, 0, null, null, volumes);
+  }
+
+  public static String createContainer(DockerClient dc, String imageReference, List<String> command,
+        Integer runAsId, Map<String,String> env, String securityOpts,
+        VolumeBind... volumes) {
+          
 
     CreateContainerCmd ccc = dc.createContainerCmd(imageReference);
     if (volumes != null) {
@@ -51,21 +59,27 @@ public class ContainerUtils {
       ccc.getHostConfig().withBinds(binds);
     }
 
-    // tbc, I think the buildpack container expects to run as root. At least it
-    // seems to execute things that require root
-    // eg, chmodding a mountpoint owned by root.
-    ccc.withUser("root");
+    if(runAsId!=null){
+        ccc.withUser(""+runAsId);
+    }
+    
+    if(env!=null) {
+      ccc.withEnv( env.entrySet().stream().map(e -> e.getKey()+"="+e.getValue()).collect(Collectors.toList()));
+    }
 
-    // TODO: this a workaround for a bug in current buildpack
-    // https://github.com/buildpacks/lifecycle/issues/339
-    ccc.withEnv("CNB_PLATFORM_API=0.4", "CNB_REGISTRY_AUTH={}");
-
-    // prevent SELinux issues when mounting docker socket
-    ccc.getHostConfig().withSecurityOpts(Collections.singletonList("label=disable"));
+    if(securityOpts!=null){
+      ccc.withHostConfig(ccc.getHostConfig().withSecurityOpts(Collections.singletonList(securityOpts)));  
+    }
 
     if (command != null) {
       ccc.withCmd(command);
     }
+
+    // String networkMode="host";
+    // if (networkMode!=null){
+    //   ccc.getHostConfig().with
+    // }
+
     CreateContainerResponse ccr = ccc.exec();
     return ccr.getId();
   }

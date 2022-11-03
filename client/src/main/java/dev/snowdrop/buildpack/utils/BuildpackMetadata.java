@@ -6,11 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class BuildpackMetadata {
-    public static String getRunImageFromMetadata(String json, String runImage) throws BuildpackException {
-
-        // if caller set runImage, that choice overrides metadata.
-        if(runImage!=null)
-            return runImage;
+    public static String getRunImageFromMetadata(String json) throws BuildpackException {
 
         // else, dig into metadata for runImage.
         ObjectMapper om = new ObjectMapper();

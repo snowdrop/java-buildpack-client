@@ -188,12 +188,8 @@ class VolumeUtilsTest {
                 //TODO: not sure why, but mockito invokes the verify twice, but the underlying stream is already depleted on the 2nd. 
                 //      since it doesn't apply to the real code, just gate on when the stream has data to only check it the first time.
                 if(is.available()>0){
-                    System.out.println("is "+is);
                     assertNotNull(is);
-
                     String r = new BufferedReader(new InputStreamReader(is)).readLine();
-
-                    System.out.println("content: "+r);
                     assertEquals(fileContent, r);
                 }
 
