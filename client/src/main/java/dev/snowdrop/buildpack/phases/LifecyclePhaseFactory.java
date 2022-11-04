@@ -1,5 +1,6 @@
 package dev.snowdrop.buildpack.phases;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -35,10 +36,13 @@ public class LifecyclePhaseFactory {
     public final static String DOCKER_SOCKET_PATH = "/var/run/docker.sock";
 
     public final static String APP_PATH_PREFIX = "/content";
+    public final static String ENV_PATH_PREFIX = "/env";
 
     //provided for this build by caller.
     final DockerClient dockerClient;
     final String dockerSocket;
+    final String dockerNetwork;
+    final boolean useDaemon;
 
     final Integer buildUserId;
     final Integer buildGroupId;
@@ -69,6 +73,8 @@ public class LifecyclePhaseFactory {
                                 ){
         this.dockerClient = dockerClient;
         this.dockerSocket = buildConfig.getDockerSocket();    
+        this.dockerNetwork = buildConfig.getDockerNetwork();
+        this.useDaemon = buildConfig.getUseDaemon().booleanValue();
 
         this.buildUserId = buildUserId;
         this.buildGroupId = buildGroupId;
@@ -115,7 +121,7 @@ public class LifecyclePhaseFactory {
             .stream()
             .flatMap(e -> new StringContent(e.getKey(), e.getValue()).getContainerEntries().stream())
             .collect(Collectors.toList());
-        VolumeUtils.addContentToVolume(dockerClient, platformVolume, "/env", buildUserId, buildGroupId, envEntries);  
+        VolumeUtils.addContentToVolume(dockerClient, platformVolume, LifecyclePhaseFactory.ENV_PATH_PREFIX, buildUserId, buildGroupId, envEntries);  
         
         //add workarounds to environment.
         if(!environment.containsKey("CNB_PLATFORM_API")) environment.put("CNB_PLATFORM_API", "0.4");
@@ -147,22 +153,27 @@ public class LifecyclePhaseFactory {
 
 
     String getContainerForPhase(String args[], Integer runAsId){
+
+        List<VolumeBind> binds = new ArrayList<>();
+        binds.add(new VolumeBind(buildCacheVolume, LifecyclePhaseFactory.BUILD_VOL_PATH));
+        binds.add(new VolumeBind(launchCacheVolume, LifecyclePhaseFactory.LAUNCH_VOL_PATH));
+        binds.add(new VolumeBind(applicationVolume, LifecyclePhaseFactory.APP_VOL_PATH));
+        binds.add(new VolumeBind(platformVolume, LifecyclePhaseFactory.PLATFORM_VOL_PATH));
+        binds.add(new VolumeBind(outputVolume, LifecyclePhaseFactory.OUTPUT_VOL_PATH));
+
+        if(useDaemon)
+          binds.add(new VolumeBind(dockerSocket, LifecyclePhaseFactory.DOCKER_SOCKET_PATH));
+
         // create a container using builderImage that will invoke the creator process
         String id = ContainerUtils.createContainer(this.dockerClient, this.builderImageName, Arrays.asList(args), 
-        runAsId, environment, "label=disable",
-        new VolumeBind(buildCacheVolume, LifecyclePhaseFactory.BUILD_VOL_PATH), 
-        new VolumeBind(launchCacheVolume, LifecyclePhaseFactory.LAUNCH_VOL_PATH),
-        new VolumeBind(applicationVolume, LifecyclePhaseFactory.APP_VOL_PATH), 
-        new VolumeBind(platformVolume, LifecyclePhaseFactory.PLATFORM_VOL_PATH),
-        new VolumeBind(dockerSocket, LifecyclePhaseFactory.DOCKER_SOCKET_PATH),
-        new VolumeBind(outputVolume, LifecyclePhaseFactory.OUTPUT_VOL_PATH)
-        );
+        runAsId, environment, "label=disable", dockerNetwork,binds.toArray(new VolumeBind[0]));
 
         log.info("- mounted " + buildCacheVolume + " at " + BUILD_VOL_PATH);
         log.info("- mounted " + launchCacheVolume + " at " + LAUNCH_VOL_PATH);
         log.info("- mounted " + applicationVolume + " at " + APP_VOL_PATH);
         log.info("- mounted " + platformVolume + " at " + PLATFORM_VOL_PATH);
-        log.info("- mounted " + dockerSocket + " at " + LifecyclePhaseFactory.DOCKER_SOCKET_PATH);
+        if(useDaemon)
+          log.info("- mounted " + dockerSocket + " at " + LifecyclePhaseFactory.DOCKER_SOCKET_PATH);
         log.info("- mounted " + outputVolume + " at " + OUTPUT_VOL_PATH);
         log.info("- build container id " + id);        
 

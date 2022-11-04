@@ -21,9 +21,6 @@ public class Creator implements LifecyclePhase{
     @Override
     public ContainerStatus runPhase(dev.snowdrop.buildpack.Logger logger, boolean useTimestamps) {
 
-        // TODO: make daemon a config option.
-        boolean useDaemon = true;
-
         // configure our call to 'creator' which will do all the work.
         String[] args = { "/cnb/lifecycle/creator", 
                         "-uid", "" + factory.buildUserId, 
@@ -33,22 +30,29 @@ public class Creator implements LifecyclePhase{
                         "-layers", LifecyclePhaseFactory.OUTPUT_VOL_PATH, 
                         "-platform", LifecyclePhaseFactory.PLATFORM_VOL_PATH, 
                         "-run-image", factory.runImageName, 
-                        "-launch-cache", LifecyclePhaseFactory.LAUNCH_VOL_PATH, 
                         "-log-level", factory.buildLogLevel, 
                         "-skip-restore", 
                         factory.finalImageName };
 
         //if using daemon, inject daemon arg before final image name.
-        if(useDaemon){
+        if(factory.useDaemon){
             int len = args.length;
-            args = Arrays.copyOf(args, len+1);
-            args[len] = args[len-1];
+            args = Arrays.copyOf(args, len+3);
+
+            //copy the image name out to the end of the list.
+            args[len+2] = args[len-1];
+
+            //insert the daemon args before eol.
             args[len-1] = "-daemon";
+            args[len-0] = "-launch-cache";
+            args[len+1] = LifecyclePhaseFactory.LAUNCH_VOL_PATH;
+            
         }
 
         // TODO: add labels for container for creator etc (as per spec)
     
-        String id = factory.getContainerForPhase(args, (useDaemon ? 0 : factory.buildUserId));
+        //creator process always has to run as root.
+        String id = factory.getContainerForPhase(args, 0);
         log.info("- build container id " + id);
 
         // launch the container!

@@ -41,11 +41,11 @@ public class ContainerUtils {
 
   public static String createContainer(DockerClient dc, String imageReference, List<String> command,
       VolumeBind... volumes) {
-        return createContainer(dc, imageReference, command, 0, null, null, volumes);
+        return createContainer(dc, imageReference, command, 0, null, null, null, volumes);
   }
 
   public static String createContainer(DockerClient dc, String imageReference, List<String> command,
-        Integer runAsId, Map<String,String> env, String securityOpts,
+        Integer runAsId, Map<String,String> env, String securityOpts, String network,
         VolumeBind... volumes) {
           
 
@@ -75,10 +75,9 @@ public class ContainerUtils {
       ccc.withCmd(command);
     }
 
-    // String networkMode="host";
-    // if (networkMode!=null){
-    //   ccc.getHostConfig().with
-    // }
+    if (network!=null){
+       ccc.withHostConfig(ccc.getHostConfig().withNetworkMode(network));
+    }
 
     CreateContainerResponse ccr = ccc.exec();
     return ccr.getId();

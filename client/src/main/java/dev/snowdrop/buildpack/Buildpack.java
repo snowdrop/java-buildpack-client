@@ -43,8 +43,10 @@ public class Buildpack {
   private final Integer pullTimeoutSeconds;
 
   private final String dockerHost;
+  private final String dockerSocket;
+  private final String dockerNetwork;
+  private final Boolean useDaemon;
 
-  private final boolean useDaemon;
   private final String buildCacheVolumeName;
   private final boolean removeBuildCacheAfterBuild;
   private final String launchCacheVolumeName;
@@ -63,18 +65,34 @@ public class Buildpack {
 
   private final int exitCode;
 
-  private final String dockerSocket;
 
-  public Buildpack(String builderImage, String runImage, String finalImage, Integer pullTimeoutSeconds, String dockerHost, String dockerSocket,
-      boolean useDaemon, String buildCacheVolumeName, boolean removeBuildCacheAfterBuild,
-      String launchCacheVolumeName, boolean removeLaunchCacheAfterBuild, String logLevel, boolean useTimestamps, Map<String, String> environment, List<Content> content, DockerClient dockerClient, dev.snowdrop.buildpack.Logger logger) {
+
+  public Buildpack(String builderImage, 
+                   String runImage, 
+                   String finalImage, 
+                   Integer pullTimeoutSeconds, 
+                   String dockerHost, 
+                   String dockerSocket,
+                   String dockerNetwork,
+                   Boolean useDaemon, 
+                   String buildCacheVolumeName, 
+                   boolean removeBuildCacheAfterBuild,
+                   String launchCacheVolumeName, 
+                   boolean removeLaunchCacheAfterBuild, 
+                   String logLevel, 
+                   boolean useTimestamps, 
+                   Map<String, String> environment, 
+                   List<Content> content, 
+                   DockerClient dockerClient,
+                   dev.snowdrop.buildpack.Logger logger) {
 
     this.builderImage = builderImage != null ? builderImage : DEFAULT_BUILD_IMAGE;
     this.runImage = runImage;
     this.finalImage = finalImage;
     this.pullTimeoutSeconds = pullTimeoutSeconds != null ? pullTimeoutSeconds : DEFAULT_PULL_TIMEOUT;
     this.dockerHost = dockerHost != null ? dockerHost : DockerClientUtils.getDockerHost();
-    this.useDaemon = useDaemon;
+    this.dockerNetwork = dockerNetwork;
+    this.useDaemon = useDaemon != null ? useDaemon : Boolean.TRUE; //default daemon to true for back compat.
     this.buildCacheVolumeName = buildCacheVolumeName;
     this.removeBuildCacheAfterBuild = removeBuildCacheAfterBuild || buildCacheVolumeName!=null;
     this.launchCacheVolumeName = launchCacheVolumeName;
@@ -164,6 +182,10 @@ public class Buildpack {
     return dockerSocket;
   }
 
+  public String getDockerNetwork() {
+    return dockerNetwork;
+  }
+
   public String getRunImage() {
     return runImage;
   }
@@ -180,7 +202,7 @@ public class Buildpack {
     return dockerHost;
   }
 
-  public boolean getUseDaemon() {
+  public Boolean getUseDaemon() {
     return useDaemon;
   }
 
