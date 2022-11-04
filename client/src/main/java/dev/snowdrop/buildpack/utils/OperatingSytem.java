@@ -1,8 +1,5 @@
 package dev.snowdrop.buildpack.utils;
 
-import java.util.Map;
-import java.util.HashMap;
-
 public enum OperatingSytem {
 
   WIN,

@@ -15,6 +15,7 @@ public class TestDriver {
   }
 
   public static void main(String[] args) throws Exception {
+    @SuppressWarnings("unused")
     TestDriver td = new TestDriver();
   }
 }
