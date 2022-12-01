@@ -60,7 +60,7 @@ class ContainerUtilsTest {
     String result = ContainerUtils.createContainer(dc, "testImageRef");
     assertEquals(result, containerId);
 
-    verify(ccc, atLeastOnce()).withUser("root");
+    verify(ccc, atLeastOnce()).withUser("0");
     verify(ccc, atLeastOnce()).getHostConfig();
     verify(hc, atLeastOnce()).withBinds(eq(Collections.<Bind>emptyList()));
     verify(ccc).exec();
@@ -84,7 +84,7 @@ class ContainerUtilsTest {
     String result = ContainerUtils.createContainer(dc, "testImageRef", commands);
     assertEquals(result, containerId);
 
-    verify(ccc, atLeastOnce()).withUser("root");
+    verify(ccc, atLeastOnce()).withUser("0");
     verify(ccc, atLeastOnce()).getHostConfig();
     verify(hc, atLeastOnce()).withBinds(eq(Collections.<Bind>emptyList()));
     verify(ccc).exec();
@@ -111,7 +111,7 @@ class ContainerUtilsTest {
     String result = ContainerUtils.createContainer(dc, "testImageRef", commands, one, two);
     assertEquals(result, containerId);
 
-    verify(ccc, atLeastOnce()).withUser("root");
+    verify(ccc, atLeastOnce()).withUser("0");
     verify(ccc, atLeastOnce()).getHostConfig();
 
     // allow binds in either other.
