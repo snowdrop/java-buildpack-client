@@ -93,7 +93,7 @@ public class Buildpack {
     this.useTimestamps = useTimestamps;
     this.environment = environment != null ? environment : new HashMap<>();
     this.content = content;
-    this.dockerClient = DockerClientUtils.getDockerClient(dockerHost);
+    this.dockerClient = dockerClient != null ? dockerClient : DockerClientUtils.getDockerClient(dockerHost);
     this.logger = logger != null ? logger : new SystemLogger();
 
     this.buildCacheVolume = buildCacheVolumeName == null ? "buildpack-build-" + randomString(10) : buildCacheVolumeName;
