@@ -110,10 +110,10 @@ public class Buildpack {
 
 
     //run the build.
-    this.exitCode = build(logger);
+    this.exitCode = build();
   }
 
-  private int build(dev.snowdrop.buildpack.Logger logger) {
+  private int build() {
 
     log.info("Buildpack build invoked, preparing environment...");
     prep();
