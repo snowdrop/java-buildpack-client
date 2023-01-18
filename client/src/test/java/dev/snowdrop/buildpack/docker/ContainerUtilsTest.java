@@ -60,7 +60,7 @@ class ContainerUtilsTest {
     String result = ContainerUtils.createContainer(dc, "testImageRef");
     assertEquals(result, containerId);
 
-    verify(ccc, atLeastOnce()).withUser("root");
+    verify(ccc, atLeastOnce()).withUser("0");
     verify(ccc, atLeastOnce()).getHostConfig();
     verify(hc, atLeastOnce()).withBinds(eq(Collections.<Bind>emptyList()));
     verify(ccc).exec();
@@ -84,7 +84,7 @@ class ContainerUtilsTest {
     String result = ContainerUtils.createContainer(dc, "testImageRef", commands);
     assertEquals(result, containerId);
 
-    verify(ccc, atLeastOnce()).withUser("root");
+    verify(ccc, atLeastOnce()).withUser("0");
     verify(ccc, atLeastOnce()).getHostConfig();
     verify(hc, atLeastOnce()).withBinds(eq(Collections.<Bind>emptyList()));
     verify(ccc).exec();
@@ -111,7 +111,7 @@ class ContainerUtilsTest {
     String result = ContainerUtils.createContainer(dc, "testImageRef", commands, one, two);
     assertEquals(result, containerId);
 
-    verify(ccc, atLeastOnce()).withUser("root");
+    verify(ccc, atLeastOnce()).withUser("0");
     verify(ccc, atLeastOnce()).getHostConfig();
 
     // allow binds in either other.
@@ -193,7 +193,181 @@ class ContainerUtilsTest {
   }
 
   @Test
+  void addContentToContainerViaList(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
+
+    String content = "Wibble";
+    String contentPath = "/one";
+    String contentName = "testfile";
+
+    int userid = 123;
+    int group = 456;
+
+    String containerId = "id";
+
+    when(dc.copyArchiveToContainerCmd(containerId)).thenReturn(catcc);
+    when(catcc.withRemotePath(anyString())).thenReturn(catcc);
+    when(catcc.withTarInputStream(argThat(x -> {
+      if (x != null) {
+        try (BufferedInputStream bis = new BufferedInputStream(x);
+            GzipCompressorInputStream gzip = new GzipCompressorInputStream(bis);
+            TarArchiveInputStream tais = new TarArchiveInputStream(gzip)) {
+          TarArchiveEntry entry;
+          while ((entry = (TarArchiveEntry) tais.getNextEntry()) != null) {
+            if (!entry.isDirectory()) {
+              if (entry.getName().equals(contentPath.substring(1) + "/" + contentName) && entry.getLongUserId() == userid
+                  && entry.getLongGroupId() == group) {
+                return true;
+              }
+            }
+          }
+          return false;
+        } catch (IOException e) {
+          System.err.println("Error during streamclose");
+          e.printStackTrace();
+          return false;
+        }
+      } else {
+        return false;
+      }
+
+    }))).thenReturn(catcc);
+
+    ContainerUtils.addContentToContainer(dc, containerId, contentPath, userid, group, new StringContent(contentName, content).getContainerEntries());
+
+    verify(catcc).exec();
+  }
+  
+  @Test
+  void addContentToContainerViaArray(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
+
+    String content = "Wibble";
+    String contentPath = "/one";
+    String contentName = "testfile";
+
+    int userid = 123;
+    int group = 456;
+
+    String containerId = "id";
+
+    when(dc.copyArchiveToContainerCmd(containerId)).thenReturn(catcc);
+    when(catcc.withRemotePath(anyString())).thenReturn(catcc);
+    when(catcc.withTarInputStream(argThat(x -> {
+      if (x != null) {
+        try (BufferedInputStream bis = new BufferedInputStream(x);
+            GzipCompressorInputStream gzip = new GzipCompressorInputStream(bis);
+            TarArchiveInputStream tais = new TarArchiveInputStream(gzip)) {
+          TarArchiveEntry entry;
+          while ((entry = (TarArchiveEntry) tais.getNextEntry()) != null) {
+            if (!entry.isDirectory()) {
+              if (entry.getName().equals(contentPath.substring(1) + "/" + contentName) && entry.getLongUserId() == userid
+                  && entry.getLongGroupId() == group) {
+                return true;
+              }
+            }
+          }
+          return false;
+        } catch (IOException e) {
+          System.err.println("Error during streamclose");
+          e.printStackTrace();
+          return false;
+        }
+      } else {
+        return false;
+      }
+
+    }))).thenReturn(catcc);
+
+    ContainerUtils.addContentToContainer(dc, containerId, contentPath, userid, group, new StringContent(contentName, content).getContainerEntries().toArray(new ContainerEntry[0]));
+
+    verify(catcc).exec();
+  }
+
+  @Test
   void addContentToContainerViaStringWithoutUserIdAndGroup(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
+
+    String content = "Wibble";
+    String contentPath = "/one";
+    String contentName = "testfile";
+
+    String containerId = "id";
+
+    when(dc.copyArchiveToContainerCmd(containerId)).thenReturn(catcc);
+    when(catcc.withRemotePath(anyString())).thenReturn(catcc);
+    when(catcc.withTarInputStream(argThat(x -> {
+      if (x != null) {
+        try (BufferedInputStream bis = new BufferedInputStream(x);
+            GzipCompressorInputStream gzip = new GzipCompressorInputStream(bis);
+            TarArchiveInputStream tais = new TarArchiveInputStream(gzip)) {
+          TarArchiveEntry entry;
+          while ((entry = (TarArchiveEntry) tais.getNextEntry()) != null) {
+            if (!entry.isDirectory()) {
+              if (entry.getName().equals(contentPath.substring(1) + "/" + contentName) && entry.getLongUserId() == 0
+                  && entry.getLongGroupId() == 0) {
+                return true;
+              }
+            }
+          }
+          return false;
+        } catch (IOException e) {
+          System.err.println("Error during streamclose");
+          e.printStackTrace();
+          return false;
+        }
+      } else {
+        return false;
+      }
+
+    }))).thenReturn(catcc);
+
+    ContainerUtils.addContentToContainer(dc, containerId, new StringContent(contentPath+"/"+contentName, content).getContainerEntries());
+
+    verify(catcc).exec();
+  }  
+
+  @Test
+  void addContentToContainerViaStringWithoutUserIdAndGroupViaArray(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
+
+    String content = "Wibble";
+    String contentPath = "/one";
+    String contentName = "testfile";
+
+    String containerId = "id";
+
+    when(dc.copyArchiveToContainerCmd(containerId)).thenReturn(catcc);
+    when(catcc.withRemotePath(anyString())).thenReturn(catcc);
+    when(catcc.withTarInputStream(argThat(x -> {
+      if (x != null) {
+        try (BufferedInputStream bis = new BufferedInputStream(x);
+            GzipCompressorInputStream gzip = new GzipCompressorInputStream(bis);
+            TarArchiveInputStream tais = new TarArchiveInputStream(gzip)) {
+          TarArchiveEntry entry;
+          while ((entry = (TarArchiveEntry) tais.getNextEntry()) != null) {
+            if (!entry.isDirectory()) {
+              if (entry.getName().equals(contentPath.substring(1) + "/" + contentName) && entry.getLongUserId() == 0
+                  && entry.getLongGroupId() == 0) {
+                return true;
+              }
+            }
+          }
+          return false;
+        } catch (IOException e) {
+          System.err.println("Error during streamclose");
+          e.printStackTrace();
+          return false;
+        }
+      } else {
+        return false;
+      }
+
+    }))).thenReturn(catcc);
+
+    ContainerUtils.addContentToContainer(dc, containerId, new StringContent(contentPath+"/"+contentName, content).getContainerEntries().toArray(new ContainerEntry[0]));
+
+    verify(catcc).exec();
+  }   
+
+  @Test
+  void addContentToContainerViaStringWithoutUserIdAndGroupViaNulls(@Mock DockerClient dc, @Mock CopyArchiveToContainerCmd catcc) {
 
     String content = "Wibble";
     String contentPath = "/one";
@@ -256,7 +430,9 @@ class ContainerUtilsTest {
         return null;
       }
     };
-    assertThrows(BuildpackException.class, () -> {
+
+    @SuppressWarnings("unused")
+    Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
 
@@ -285,7 +461,9 @@ class ContainerUtilsTest {
         return null;
       }
     };
-    assertThrows(BuildpackException.class, () -> {
+
+    @SuppressWarnings("unused")
+    Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
 
@@ -315,7 +493,9 @@ class ContainerUtilsTest {
         return null;
       }
     };
-    assertThrows(BuildpackException.class, () -> {
+
+    @SuppressWarnings("unused")
+    Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
     verify(catcc).exec();
@@ -347,7 +527,9 @@ class ContainerUtilsTest {
         };
       }
     };
-    assertThrows(BuildpackException.class, () -> {
+
+    @SuppressWarnings("unused")
+    Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
     verify(catcc).exec();
@@ -380,12 +562,14 @@ class ContainerUtilsTest {
         };
       }
     };
-    assertThrows(BuildpackException.class, () -> {
+
+    @SuppressWarnings("unused")
+    Exception e = assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
     verify(catcc).exec();
   }
-
+  
   @Test
   void addContentToContainerViaFile(@Mock DockerClient dc,
       @Mock CopyArchiveToContainerCmd catcc, 
@@ -444,6 +628,15 @@ class ContainerUtilsTest {
     ContainerUtils.addContentToContainer(dc, containerId, "/", 0,0, f);
 
     verify(catcc).exec();
+  }
+
+  @Test
+  void testRemoveContainer(@Mock DockerClient dc, @Mock RemoveContainerCmd rcc)
+  {
+    String containerId = "id";
+    when(dc.removeContainerCmd(containerId)).thenReturn(rcc);
+    ContainerUtils.removeContainer(dc, containerId);
+    verify(rcc).exec();
   }
 
 }
