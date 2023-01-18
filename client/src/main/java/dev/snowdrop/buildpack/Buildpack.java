@@ -119,7 +119,7 @@ public class Buildpack {
     log.info("- build volumes created");
     
     // configure our call to 'creator' which will do all the work.
-    String[] xargs = { "bash", "-c", "ls -alR "+PLATFORM_VOL_PATH };
+    //String[] xargs = { "bash", "-c", "ls -alR "+PLATFORM_VOL_PATH };
 
     String[] args = { "/cnb/lifecycle/creator", 
                       "-uid", "" + userId, 

@@ -15,6 +15,6 @@ public class TestDriver {
   }
 
   public static void main(String[] args) throws Exception {
-    TestDriver td = new TestDriver();
+    new TestDriver();
   }
 }

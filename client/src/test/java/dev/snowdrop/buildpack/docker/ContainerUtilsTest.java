@@ -256,7 +256,7 @@ class ContainerUtilsTest {
         return null;
       }
     };
-    Exception e = assertThrows(BuildpackException.class, () -> {
+    assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
 
@@ -285,7 +285,7 @@ class ContainerUtilsTest {
         return null;
       }
     };
-    Exception e = assertThrows(BuildpackException.class, () -> {
+    assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
 
@@ -315,7 +315,7 @@ class ContainerUtilsTest {
         return null;
       }
     };
-    Exception e = assertThrows(BuildpackException.class, () -> {
+    assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
     verify(catcc).exec();
@@ -347,7 +347,7 @@ class ContainerUtilsTest {
         };
       }
     };
-    Exception e = assertThrows(BuildpackException.class, () -> {
+    assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
     verify(catcc).exec();
@@ -380,7 +380,7 @@ class ContainerUtilsTest {
         };
       }
     };
-    Exception e = assertThrows(BuildpackException.class, () -> {
+    assertThrows(BuildpackException.class, () -> {
       ContainerUtils.addContentToContainer(dc, containerId, ce);
     });
     verify(catcc).exec();
