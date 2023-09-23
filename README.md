@@ -83,7 +83,20 @@ Want to try out this project? The packages/api are not fixed in stone yet, so be
     bpb = bpb.withFinalImage("myorg/myimage:mytag");
 ```
 
-5. Invoke the build
+5. Configure the build cache volume 
+
+The code below demostrates how to cache the maven repository
+so that it's reused for subsequent builds.
+
+```
+    bpb = bpb.withBuildCacheVolumeName("m2");
+             .withBuildCacheVolumePath("/home/cnb/.m2");
+```
+
+**Note**: The path used is displayed by the builder during the build.
+In this case it is `/home/cnb/.m2`.
+
+6. Invoke the build
 ```
     bpb.build();
 ```
@@ -93,6 +106,8 @@ Or combine all the above steps into a single callchain.
 Buildpack.builder()
     .withFileContent(new File("/path/to/the/project/to/build))
     .withFinalImage("myorg/myimage:mytag")
+    .withBuildCacheVolumeName("m2");
+    .withBuildCacheVolumePath("/path/to/m2");
     .build();
 ```
 

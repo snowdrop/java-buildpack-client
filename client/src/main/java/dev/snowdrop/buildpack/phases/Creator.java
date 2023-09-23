@@ -25,7 +25,7 @@ public class Creator implements LifecyclePhase{
         String[] args = { "/cnb/lifecycle/creator", 
                         "-uid", "" + factory.buildUserId, 
                         "-gid", "" + factory.buildGroupId, 
-                        "-cache-dir", LifecyclePhaseFactory.BUILD_VOL_PATH,
+                        "-cache-dir", factory.buildCachePath,
                         "-app", LifecyclePhaseFactory.APP_VOL_PATH + LifecyclePhaseFactory.APP_PATH_PREFIX, 
                         "-layers", LifecyclePhaseFactory.OUTPUT_VOL_PATH, 
                         "-platform", LifecyclePhaseFactory.PLATFORM_VOL_PATH, 

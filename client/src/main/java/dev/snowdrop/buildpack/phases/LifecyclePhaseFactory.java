@@ -55,7 +55,9 @@ public class LifecyclePhaseFactory {
 
     //names of the volumes during runtime.
     final String buildCacheVolume;
+    final String buildCachePath;
     final String launchCacheVolume;
+    final String launchCachePath;
     final String applicationVolume;
     final String outputVolume;
     final String platformVolume;
@@ -91,7 +93,9 @@ public class LifecyclePhaseFactory {
         this.removeLaunchCacheAfterBuild = buildConfig.getRemoveLaunchCacheAfterBuild();
 
         this.buildCacheVolume = buildConfig.getBuildCacheVolumeName() == null ? "buildpack-build-" + randomString(10) : buildConfig.getBuildCacheVolumeName();
+        this.buildCachePath = buildConfig.getBuildCacheVolumePath() == null ? BUILD_VOL_PATH : buildConfig.getBuildCacheVolumePath();
         this.launchCacheVolume = buildConfig.getLaunchCacheVolumeName() == null ? "buildpack-launch-" + randomString(10) : buildConfig.getLaunchCacheVolumeName();
+        this.launchCachePath = buildConfig.getLaunchCacheVolumePath() == null ? LAUNCH_VOL_PATH : buildConfig.getLaunchCacheVolumePath();
         this.applicationVolume = "buildpack-app-" + randomString(10);
         this.outputVolume = "buildpack-output-" + randomString(10);
         this.platformVolume = "buildpack-platform-" + randomString(10);
@@ -155,8 +159,8 @@ public class LifecyclePhaseFactory {
     String getContainerForPhase(String args[], Integer runAsId){
 
         List<VolumeBind> binds = new ArrayList<>();
-        binds.add(new VolumeBind(buildCacheVolume, LifecyclePhaseFactory.BUILD_VOL_PATH));
-        binds.add(new VolumeBind(launchCacheVolume, LifecyclePhaseFactory.LAUNCH_VOL_PATH));
+        binds.add(new VolumeBind(buildCacheVolume, buildCachePath));
+        binds.add(new VolumeBind(launchCacheVolume, launchCachePath));
         binds.add(new VolumeBind(applicationVolume, LifecyclePhaseFactory.APP_VOL_PATH));
         binds.add(new VolumeBind(platformVolume, LifecyclePhaseFactory.PLATFORM_VOL_PATH));
         binds.add(new VolumeBind(outputVolume, LifecyclePhaseFactory.OUTPUT_VOL_PATH));
@@ -168,8 +172,8 @@ public class LifecyclePhaseFactory {
         String id = ContainerUtils.createContainer(this.dockerClient, this.builderImageName, Arrays.asList(args), 
         runAsId, environment, "label=disable", dockerNetwork,binds.toArray(new VolumeBind[0]));
 
-        log.info("- mounted " + buildCacheVolume + " at " + BUILD_VOL_PATH);
-        log.info("- mounted " + launchCacheVolume + " at " + LAUNCH_VOL_PATH);
+        log.info("- mounted " + buildCacheVolume + " at " + buildCachePath);
+        log.info("- mounted " + launchCacheVolume + " at " + launchCachePath);
         log.info("- mounted " + applicationVolume + " at " + APP_VOL_PATH);
         log.info("- mounted " + platformVolume + " at " + PLATFORM_VOL_PATH);
         if(useDaemon)

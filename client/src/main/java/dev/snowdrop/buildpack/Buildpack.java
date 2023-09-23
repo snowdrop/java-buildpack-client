@@ -48,8 +48,11 @@ public class Buildpack {
   private final Boolean useDaemon;
 
   private final String buildCacheVolumeName;
+  private final String buildCacheVolumePath;
   private final boolean removeBuildCacheAfterBuild;
+
   private final String launchCacheVolumeName;
+  private final String launchCacheVolumePath;
   private final boolean removeLaunchCacheAfterBuild;
 
   private final String logLevel;
@@ -76,8 +79,10 @@ public class Buildpack {
                    String dockerNetwork,
                    Boolean useDaemon, 
                    String buildCacheVolumeName, 
+                   String buildCacheVolumePath, 
                    boolean removeBuildCacheAfterBuild,
                    String launchCacheVolumeName, 
+                   String launchCacheVolumePath, 
                    boolean removeLaunchCacheAfterBuild, 
                    String logLevel, 
                    boolean useTimestamps, 
@@ -94,8 +99,10 @@ public class Buildpack {
     this.dockerNetwork = dockerNetwork;
     this.useDaemon = useDaemon != null ? useDaemon : Boolean.TRUE; //default daemon to true for back compat.
     this.buildCacheVolumeName = buildCacheVolumeName;
+    this.buildCacheVolumePath = buildCacheVolumePath;
     this.removeBuildCacheAfterBuild = removeBuildCacheAfterBuild || buildCacheVolumeName!=null;
     this.launchCacheVolumeName = launchCacheVolumeName;
+    this.launchCacheVolumePath = launchCacheVolumePath;
     this.removeLaunchCacheAfterBuild = removeLaunchCacheAfterBuild || launchCacheVolumeName!=null;
     this.logLevel = logLevel != null ? logLevel : DEFAULT_LOG_LEVEL;
     this.useTimestamps = useTimestamps;
@@ -210,12 +217,20 @@ public class Buildpack {
     return buildCacheVolumeName;
   }
 
+  public String getBuildCacheVolumePath() {
+    return buildCacheVolumePath;
+  }
+
   public boolean getRemoveBuildCacheAfterBuild() {
     return removeBuildCacheAfterBuild;
   }
 
   public String getLaunchCacheVolumeName() {
     return launchCacheVolumeName;
+  }
+
+  public String getLaunchCacheVolumePath() {
+    return launchCacheVolumePath;
   }
 
   public boolean getRemoveLaunchCacheAfterBuild() {
