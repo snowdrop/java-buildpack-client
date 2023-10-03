@@ -1,0 +1,4 @@
+name: Java Buildpack Client
+release:
+  current-version: 0.0.7
+  next-version: 999-SNAPSHOT

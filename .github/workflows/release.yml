@@ -1,0 +1,72 @@
+name: Release
+
+env:
+  MAVEN_ARGS: -B -e
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [closed]
+    paths:
+      - '.github/project.yml'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: release
+
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout 
+
+      - uses: radcortez/project-metadata-action@main
+        name: Retrieve project metadata
+        id: metadata
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          metadata-file-path: '.github/project.yml'
+          local-file: true
+
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          java-version: 8
+          distribution: 'temurin'
+          server-id: oss-sonatype-staging
+          server-username: OSS_SONATYPE_USERNAME
+          server-password: OSS_SONATYPE_PASSWORD
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+      - name: Configure Git author
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+      - name: Maven release ${{steps.metadata.outputs.current-version}}
+        run: |
+          ./mvnw clean install -DskipTests -Prelease
+          git checkout -b release
+
+          # Set sample version
+          ./scripts/set-version.sh samples ${{steps.metadata.outputs.current-version}}
+          if git diff-index --quiet HEAD --; then
+              echo "No changes to commit."
+          else
+            git commit -m "chore: Set samples version to ${{steps.metadata.outputs.next-version}}"
+          fi
+
+          ./mvnw -X -Prelease -B release:clean release:prepare -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}}
+          git checkout ${{github.base_ref}}
+          git rebase release
+          ./mvnw -X -Prelease -B release:perform -DskipTests
+        env:
+          OSS_SONATYPE_USERNAME: ${{ secrets.OSS_SONATYPE_USERNAME }}
+          OSS_SONATYPE_PASSWORD: ${{ secrets.OSS_SONATYPE_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+      - name: Push changes to ${{github.base_ref}}
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{github.base_ref}}
+          force: true
+          tags: true
