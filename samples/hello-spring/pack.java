@@ -10,7 +10,7 @@ public class pack {
     public static void main(String... args) {
       Buildpack.builder()
         .addNewFileContent(new File("."))
-        .withBuilderImage("quay.io/swowdrop/ubi-builder:latest")
+        .withBuilderImage("quay.io/snowdrop/ubi-builder:latest")
         .withFinalImage("snowdrop/hello-spring:latest")
         .build();
     }
