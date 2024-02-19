@@ -20,7 +20,7 @@ Buildpack.builder()
     .build();
 ```
 
-This will use the default builder image from (https://packeto.io) to handle the build
+This will use the default builder image from (https://paketo.io) to handle the build
 of the project in the `/home/user/java-project` folder. The resulting image will 
 be stored in the local docker daemon as `test/testimage:latest`.
 

@@ -1,4 +1,4 @@
-package dev.snowdrop.buildpack.phases;
+package dev.snowdrop.buildpack.lifecycle;
 
 import dev.snowdrop.buildpack.Logger;
 

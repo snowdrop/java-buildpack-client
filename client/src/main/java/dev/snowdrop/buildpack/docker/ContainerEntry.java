@@ -9,7 +9,7 @@ import java.io.InputStream;
  */
 public interface ContainerEntry {
 
-
+  
   public String getPath();
 
   public long getSize();

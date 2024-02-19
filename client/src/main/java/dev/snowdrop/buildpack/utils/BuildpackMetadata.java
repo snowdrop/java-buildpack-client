@@ -1,14 +1,38 @@
 package dev.snowdrop.buildpack.utils;
 
-import dev.snowdrop.buildpack.BuildpackException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.tomlj.Toml;
+import org.tomlj.TomlArray;
+import org.tomlj.TomlParseResult;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class BuildpackMetadata {
-    public static String getRunImageFromMetadata(String json) throws BuildpackException {
+import dev.snowdrop.buildpack.BuildpackException;
+import dev.snowdrop.buildpack.docker.ContainerUtils;
 
-        // else, dig into metadata for runImage.
+public class BuildpackMetadata {
+
+    //used for builders created for platform 0.12 onwards
+    public static List<String> getRunImageFromRunTOML(String imageReference) throws BuildpackException {
+        List<String> runImages = new ArrayList<>();
+
+        byte[] runTomlData = ContainerUtils.getFileFromContainer(null, imageReference, "/cnb/run.toml");
+        TomlParseResult analyzed = Toml.parse(new String(runTomlData));
+
+        TomlArray ta = analyzed.getArray("images");
+        for(int i=0; i<ta.size(); i++){
+            runImages.add(ta.getTable(i).getString("image"));
+        }
+        return runImages;
+    }
+
+    //used for platform before 0.12
+    public static String getRunImageFromMetadataJSON(String json) throws BuildpackException {
+        //dig into metadata for runImage.
         ObjectMapper om = new ObjectMapper();
         om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
@@ -28,6 +52,26 @@ public class BuildpackMetadata {
             }
             
             return ri;
+        } catch (Exception e) {
+            throw BuildpackException.launderThrowable(e);
+        }
+    }
+
+    public static List<String> getSupportedPlatformsFromMetadata(String json) throws BuildpackException {
+        //dig into metadata for supported platforms.
+        ObjectMapper om = new ObjectMapper();
+        om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            JsonNode root = om.readTree(json);
+
+            List<String> platforms = JsonUtils.getArray(root, "lifecycle/apis/platform/supported");
+
+            // if supported platform metadata is unparseable.
+            if(platforms==null){
+                throw new Exception("Bad platform metadata in builder image");
+            }
+            
+            return platforms;
         } catch (Exception e) {
             throw BuildpackException.launderThrowable(e);
         }

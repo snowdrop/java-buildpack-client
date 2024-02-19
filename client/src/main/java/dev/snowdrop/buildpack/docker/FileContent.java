@@ -2,6 +2,7 @@ package dev.snowdrop.buildpack.docker;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -31,6 +32,9 @@ public class FileContent implements Content {
 
   public FileContent(String prefix, File file) {
     this(prefix, file, null);
+    if(!file.exists()){
+      throw new RuntimeException(new FileNotFoundException(file.getAbsolutePath()));
+    }
   }
 
   private FileContent(String prefix, File file, File root) {

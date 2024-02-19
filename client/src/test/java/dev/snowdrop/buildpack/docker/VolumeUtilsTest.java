@@ -2,62 +2,40 @@ package dev.snowdrop.buildpack.docker;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.stubbing.Answer;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CopyArchiveToContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.CreateVolumeCmd;
 import com.github.dockerjava.api.command.InspectVolumeCmd;
 import com.github.dockerjava.api.command.InspectVolumeResponse;
-import com.github.dockerjava.api.command.RemoveContainerCmd;
 import com.github.dockerjava.api.command.RemoveVolumeCmd;
 import com.github.dockerjava.api.exception.NotFoundException;
-import com.github.dockerjava.api.model.Bind;
-import com.github.dockerjava.api.model.HostConfig;
 
 import dev.snowdrop.buildpack.BuildpackException;
 
@@ -105,6 +83,7 @@ class VolumeUtilsTest {
   
   
 
+  @SuppressWarnings("resource")
   @Test
   void addContentToVolumeViaString(@Mock DockerClient dc ) {
 
@@ -117,7 +96,7 @@ class VolumeUtilsTest {
 
         scu.when(() -> ContainerUtils.createContainer(eq(dc), anyString(), ArgumentMatchers.<VolumeBind>any())).thenReturn(containerId);
 
-        boolean result = VolumeUtils.addContentToVolume(dc, volumeName, entryName, entryContent);
+        boolean result = VolumeUtils.addContentToVolume(dc, volumeName, "tianon/true", entryName, entryContent);
         assertTrue(result);
 
         scu.verify(() -> ContainerUtils.addContentToContainer(eq(dc), eq(containerId), anyString(), anyInt(), anyInt(), ArgumentMatchers.<ContainerEntry>argThat(ce -> {
@@ -139,6 +118,7 @@ class VolumeUtilsTest {
 
   }
 
+  @SuppressWarnings("resource")
   @Test
   void addContentToContainerViaFile(@Mock DockerClient dc,
                                     @Mock File f,
@@ -175,15 +155,14 @@ class VolumeUtilsTest {
 
         scu.when(() -> ContainerUtils.createContainer(eq(dc), anyString(), ArgumentMatchers.<VolumeBind>any())).thenReturn(containerId);
 
-        boolean result = VolumeUtils.addContentToVolume(dc, volumeName, pathInVolume, f);
+        boolean result = VolumeUtils.addContentToVolume(dc, volumeName, "tianon/true", pathInVolume, f);
         assertTrue(result);
 
         scu.verify(() -> ContainerUtils.addContentToContainer(eq(dc), eq(containerId), anyString(), anyInt(), anyInt(), ArgumentMatchers.<ContainerEntry>argThat(ce -> {
             assertEquals("/"+fileName, ce.getPath());
             assertEquals(fileSize, ce.getSize());
             
-            try{
-                InputStream is = ce.getDataSupplier().getData();
+            try (InputStream is = ce.getDataSupplier().getData();) {
 
                 //TODO: not sure why, but mockito invokes the verify twice, but the underlying stream is already depleted on the 2nd. 
                 //      since it doesn't apply to the real code, just gate on when the stream has data to only check it the first time.

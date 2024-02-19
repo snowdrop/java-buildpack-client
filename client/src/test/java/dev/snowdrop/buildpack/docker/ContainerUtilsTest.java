@@ -569,7 +569,7 @@ class ContainerUtilsTest {
     });
     verify(catcc).exec();
   }
-
+  
   @Test
   void addContentToContainerViaFile(@Mock DockerClient dc,
       @Mock CopyArchiveToContainerCmd catcc, 
