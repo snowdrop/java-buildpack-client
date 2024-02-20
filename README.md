@@ -114,7 +114,7 @@ int exitCode = BuildConfig.builder()
                            .getExitCode();
 ```
 
-There are many more ways to customize & configure the BuildConfig, take a look at the [interface](src/main/java/dev/snowdrop/buildpack/BuildConfig.java) to see everything thats currently possible. 
+There are many more ways to customize & configure the BuildConfig, take a look at the [interface](client/src/main/java/dev/snowdrop/buildpack/BuildConfig.java) to see everything thats currently possible. 
 
 A demo project has been created to allow easy exploration of uses of `BuildConfig` [here](https://github.com/snowdrop/java-buildpack-demo) :-)
 
