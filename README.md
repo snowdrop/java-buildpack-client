@@ -29,7 +29,7 @@ be stored in the local docker daemon as `test/testimage:latest`.
 
 ## Overview
 
-The [`BuildpackConfig`](src/main/java/dev/snowdrop/buildpack/BuildConfig.java) offers other configuration methods to customise behavior. 
+The [`BuildpackConfig`](client/src/main/java/dev/snowdrop/buildpack/BuildConfig.java) offers other configuration methods to customise behavior. 
 
 - run/build/output Image can be specified
 - docker can be configured with.. 
@@ -58,7 +58,7 @@ passed, allowing for sparse source directories, or multiple project dirs to be c
 - File/Directory, with prefix. Eg, take this directory /home/fish/wibble, and make it appear in the application content as /prodcode
 - String Content, with path. Eg, take this String content "FISH" and make it appear in the application content as /prodcode/fish.txt
 - InputStream Content, with path. Similar to String, except with data pulled from an InputStream.
-- [`ContainerEntry`](src/main/java/dev/snowdrop/buildpack/docker/ContainerEntry.java) interface, for custom integration.
+- [`ContainerEntry`](client/src/main/java/dev/snowdrop/buildpack/docker/ContainerEntry.java) interface, for custom integration.
 
 Build/RunImages will be pulled as required. 
 
