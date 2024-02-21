@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -94,7 +95,7 @@ class VolumeUtilsTest {
 
     try (MockedStatic<ContainerUtils> scu = Mockito.mockStatic(ContainerUtils.class)){
 
-        scu.when(() -> ContainerUtils.createContainer(eq(dc), anyString(), ArgumentMatchers.<VolumeBind>any())).thenReturn(containerId);
+        scu.when(() -> ContainerUtils.createContainer(eq(dc), anyString(), anyList(), ArgumentMatchers.<VolumeBind>any())).thenReturn(containerId);
 
         boolean result = VolumeUtils.addContentToVolume(dc, volumeName, "tianon/true", entryName, entryContent);
         assertTrue(result);
@@ -153,7 +154,7 @@ class VolumeUtilsTest {
 
     try (MockedStatic<ContainerUtils> scu = Mockito.mockStatic(ContainerUtils.class)){
 
-        scu.when(() -> ContainerUtils.createContainer(eq(dc), anyString(), ArgumentMatchers.<VolumeBind>any())).thenReturn(containerId);
+        scu.when(() -> ContainerUtils.createContainer(eq(dc), anyString(), anyList(), ArgumentMatchers.<VolumeBind>any())).thenReturn(containerId);
 
         boolean result = VolumeUtils.addContentToVolume(dc, volumeName, "tianon/true", pathInVolume, f);
         assertTrue(result);
