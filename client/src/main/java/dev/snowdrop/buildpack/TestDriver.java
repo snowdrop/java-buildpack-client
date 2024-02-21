@@ -3,34 +3,52 @@ package dev.snowdrop.buildpack;
 import java.io.File;
 import java.util.HashMap;
 
+import dev.snowdrop.buildpack.config.ImageReference;
+
 public class TestDriver {
 
-  public TestDriver() throws Exception {
-
-    //run this with 
-    // mvnw exec:java -Dexec.classpathScope="test"  -Dexec.mainClass="dev.snowdrop.buildpack.TestDriver"
+  public static void main(String[] args) throws Exception {
 
     System.setProperty("org.slf4j.simpleLogger.log.dev.snowdrop.buildpack","debug");
     System.setProperty("org.slf4j.simpleLogger.log.dev.snowdrop.buildpack.docker","debug");
-    System.setProperty("org.slf4j.simpleLogger.log.dev.snowdrop.buildpack.phases","debug");
+    System.setProperty("org.slf4j.simpleLogger.log.dev.snowdrop.buildpack.lifecycle","debug");
+    System.setProperty("org.slf4j.simpleLogger.log.dev.snowdrop.buildpack.lifecycle.phases","debug");
 
     HashMap<String,String> env = new HashMap<>();
-    //env.put("CNB_USER_ID","0");
 
-    Buildpack.builder()
-      .addNewFileContent(new File("/home/sample-springboot-java-app/"))
-      .withBuilderImage("localhost:5000/paketobuildpacks/builder:base")
-      .withFinalImage("testdriver/testimage:latest")
-      .withUseDaemon(true)
-      .withDockerNetwork("host")
-      .withLogger(new SystemLogger())
-      .withLogLevel("debug")
-      .withEnvironment(env)
-      .build();
-  }
+    
+    int exitCode = 
+    BuildConfig.builder().withNewDockerConfig()
+                            .withUseDaemon(false)
+                            .withDockerNetwork("host")
+                            .and()
+                         .withNewLogConfig()
+                            .withLogger(new SystemLogger())
+                            .withLogLevel("debug")
+                            .and()
+                         .withNewKanikoCacheConfig()
+                            //.withCacheVolumeName("mykanikocache")
+                            .withDeleteCacheAfterBuild(true)
+                            .and()
+                         .withNewBuildCacheConfig()
+                            //.withCacheVolumeName("buildcachevol")
+                            .withDeleteCacheAfterBuild(true)
+                            .and()
+                         .withNewLaunchCacheConfig()
+                            //.withCacheVolumeName("launchcachevol")
+                            .withDeleteCacheAfterBuild(true)
+                            .and()
+                         .withNewPlatformConfig()
+                            .withEnvironment(env)
+                            .withTrustBuilder(false)
+                            .and()
+                         .withBuilderImage(new ImageReference("paketocommunity/builder-ubi-base"))
+                         .withOutputImage(new ImageReference("localhost:5000/testdriver/newimage6:latest"))
+                         .addNewFileContentApplication(new File("/tmp/sample-springboot-java-app/"))
+                         .build()
+                         .getExitCode();
 
-  public static void main(String[] args) throws Exception {
-    @SuppressWarnings("unused")
-    TestDriver td = new TestDriver();
+    System.out.println("Build for completed with exit code "+exitCode);
+    
   }
 }

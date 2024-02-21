@@ -1,4 +1,4 @@
-package dev.snowdrop.buildpack.phases;
+package dev.snowdrop.buildpack.lifecycle;
 
 import lombok.Data;
 import lombok.ToString;

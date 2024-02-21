@@ -8,10 +8,12 @@ import dev.snowdrop.buildpack.docker.*;
 public class pack {
 
     public static void main(String... args) {
-      Buildpack.builder()
-        .addNewFileContent(new File("."))
-        .withBuildImage("redhat/buildpacks-builder-quarkus-jvm:latest")
-        .withFinalImage("snowdrop/hello-quarkus:latest")
-        .build();
+
+      int exitCode = BuildConfig.builder()
+                           .withBuilderImage(new ImageReference("paketocommunity/builder-ubi-base"))
+                           .withOutputImage(new ImageReference("snowdrop/hello-quarkus:latest"))
+                           .addNewFileContentApplication(new File("."))
+                           .build()
+                           .getExitCode();
     }
 }
