@@ -9,7 +9,8 @@ public class pack {
 
     public static void main(String... args) {
         int exitCode = BuildConfig.builder()
-                           .withOutputImage(new ImageReference("snowdrop/hello-quarkus:latest"))
+                           .withBuilderImage(new ImageReference("paketocommunity/builder-ubi-base"))        
+                           .withOutputImage(new ImageReference("snowdrop/hello-spring:latest"))
                            .addNewFileContentApplication(new File("."))
                            .build()
                            .getExitCode();

@@ -92,8 +92,11 @@
            <goal>exec</goal>
         </goals>
         <configuration>
-          <executable>id-debug.sh</executable>
+          <executable>/bin/sh</executable>
           <workingDirectory>${basedir}</workingDirectory>
+          <arguments>
+            <argument>${basedir}/id-debug.sh</argument>
+          </arguments>
         </configuration>
       </execution>
     </executions>
