@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import dev.snowdrop.buildpack.BuildpackException;
+import dev.snowdrop.buildpack.utils.FilePermissions;
 import io.sundr.builder.annotations.Buildable;
 
 @Buildable(generateBuilderPackage = true, builderPackage = "dev.snowdrop.buildpack.builder")
@@ -25,6 +26,8 @@ public class FileContent implements Content {
   private final String prefix;
   private final File file;
   private final File root;
+  //delegate calls for permissions thru static, to enable testing.
+  private static FilePermissions filePermissions = new FilePermissions();
 
   public FileContent(File file) {
     this(DEFAULT_PREFIX, file);
@@ -81,6 +84,11 @@ public class FileContent implements Content {
           // format MUST be unix, as we're putting them in a unix container
           return prefix + root.toPath().relativize(file.toPath()).toString().replace(NON_UNIX_FILE_SEPARATOR,
               UNIX_FILE_SEPARATOR);
+        }
+
+        @Override
+        public Integer getMode() {
+          return filePermissions.getPermissions(file);
         }
 
         @Override

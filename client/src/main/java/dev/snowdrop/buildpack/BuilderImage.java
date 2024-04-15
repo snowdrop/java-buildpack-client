@@ -37,7 +37,6 @@ public class BuilderImage {
         this.runImages = original.runImages;
         this.builderSupportedPlatforms = original.builderSupportedPlatforms;
         this.hasExtensions = original.hasExtensions || addedExtensions;
-        System.out.println("Extended builder image hasExtensions? "+hasExtensions+" orig?"+original.hasExtensions+" add?"+addedExtensions);
         this.image = extended;
     }
 
@@ -72,15 +71,21 @@ public class BuilderImage {
         }
 
         String xtnLayers = ii.labels.get("io.buildpacks.extension.layers");
-        System.out.println("Builder image got xtnLayers label "+xtnLayers);
+        //if xtnLayers is absent, or is just the empty json {}, there are no extensions.
+        if(xtnLayers!=null && !xtnLayers.isEmpty()){
+            xtnLayers = xtnLayers.trim();
+            xtnLayers.replaceAll("\\\\w", "");
+            if(xtnLayers.equals("{}")){
+                xtnLayers = null;
+            }
+        }
         hasExtensions = (xtnLayers!=null && !xtnLayers.isEmpty());
-        System.out.println("BuilderImage hasExtensions? "+hasExtensions);
         
         //defer the calculation of run images to the getter, because we 
         //need to know the selected platform level to know how to find the run metadata.
-        metadataJson = ii.labels.get("io.buildpacks.builder.metadata"); 
+        this.metadataJson = ii.labels.get("io.buildpacks.builder.metadata"); 
         this.runImage = runImage; 
-        runImages = null;
+        this.runImages = null;
 
         builderSupportedPlatforms = BuildpackMetadata.getSupportedPlatformsFromMetadata(metadataJson);
     }

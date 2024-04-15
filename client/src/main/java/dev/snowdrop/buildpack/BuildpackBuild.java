@@ -9,6 +9,7 @@ import dev.snowdrop.buildpack.config.DockerConfig;
 import dev.snowdrop.buildpack.config.PlatformConfig;
 import dev.snowdrop.buildpack.docker.BuildContainerUtils;
 import dev.snowdrop.buildpack.lifecycle.LifecycleExecutor;
+import dev.snowdrop.buildpack.lifecycle.Version;
 import dev.snowdrop.buildpack.utils.LifecycleMetadata;
 
 public class BuildpackBuild {
@@ -72,8 +73,8 @@ public class BuildpackBuild {
                                                          config.getPlatformConfig(),
                                                          builder);
 
-        System.out.println("Selected platform level "+activePlatformLevel);
-
+        //precache the runimages in the orig builder before extending it.
+        builder.getRunImages(new Version(activePlatformLevel));
         //create the extended builder image.
         BuilderImage extendedBuilder = BuildContainerUtils.createBuildImage(config.getDockerConfig().getDockerClient(), 
                                                                             builder, 

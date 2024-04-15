@@ -2,13 +2,18 @@ package dev.snowdrop.buildpack.docker;
 
 import java.io.File;
 import java.util.List;
+import org.slf4j.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.slf4j.LoggerFactory;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.NotFoundException;
 
 public class VolumeUtils {
+
+  private static final Logger log = LoggerFactory.getLogger(VolumeUtils.class);
 
   final static String mountPrefix = "/volumecontent";
 
@@ -37,8 +42,8 @@ public class VolumeUtils {
     return internalAddContentToVolume(dc, volumeName, useImage, mountPrefix, 0,0, new FileContent(content).getContainerEntries());
   }
 
-  public static boolean addContentToVolume(DockerClient dc, String volumeName, String useImage, String name, String content) {
-    return internalAddContentToVolume(dc, volumeName, useImage, mountPrefix, 0,0, new StringContent(name, content).getContainerEntries());
+  public static boolean addContentToVolume(DockerClient dc, String volumeName, String useImage, String name, Integer mode, String content) {
+    return internalAddContentToVolume(dc, volumeName, useImage, mountPrefix, 0,0, new StringContent(name, mode, content).getContainerEntries());
   }
 
   public static boolean addContentToVolume(DockerClient dc, String volumeName, String useImage, String prefix, int uid, int gid, List<ContainerEntry> entries) {
@@ -56,11 +61,16 @@ public class VolumeUtils {
   }
 
   private static boolean internalAddContentToVolume(DockerClient dc, String volumeName, String useImage, String prefix, int uid, int gid, ContainerEntry... entries) {
-    
     List<String> command = Stream.of("").collect(Collectors.toList());
     String dummyId = ContainerUtils.createContainer(dc, useImage, command, new VolumeBind(volumeName, mountPrefix));
-    ContainerUtils.addContentToContainer(dc, dummyId, prefix, uid, gid, entries);
-    ContainerUtils.removeContainer(dc, dummyId);
-    return true;
+    try{
+      log.info("Adding content to volume "+volumeName+" under prefix "+prefix+" using image "+useImage+" with volume bound at "+mountPrefix+" temp container id "+dummyId);
+      ContainerUtils.addContentToContainer(dc, dummyId, prefix, uid, gid, entries);
+      return true;
+    }finally{
+      if(dummyId!=null){
+        ContainerUtils.removeContainer(dc, dummyId);
+      }
+    }
   }
 }

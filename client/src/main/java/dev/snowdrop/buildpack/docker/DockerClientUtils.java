@@ -1,5 +1,10 @@
 package dev.snowdrop.buildpack.docker;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +16,6 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
-
 
 public class DockerClientUtils {
   private static final Logger log = LoggerFactory.getLogger(DockerClientUtils.class);
@@ -46,15 +50,41 @@ public class DockerClientUtils {
 
   public static String getDockerHost() {
     String dockerHost = System.getenv("DOCKER_HOST");
-    if (dockerHost != null && dockerHost.isEmpty())  {
+    if (dockerHost != null && dockerHost.isEmpty()) {
       return dockerHost;
     }
 
     switch (OperatingSytem.getOperationSystem()) {
-    case WIN:
-      return "npipe:////./pipe/docker_engine";
-    default:
-      return "unix:///var/run/docker.sock";
+      case WIN:
+        return "npipe:////./pipe/docker_engine";
+      case LINUX: {
+        //test for presence of docker.
+        File dockerSock = new File("/var/run/docker.sock");
+        if(dockerSock.exists()){
+          return "unix:///var/run/docker.sock";
+        }
+
+        File podmanSock = new File("/var/run/podman.sock");
+        if(podmanSock.exists()){
+          return "unix:///var/run/podman.sock";
+        }
+
+        try{
+          int uid = (Integer)Files.getAttribute(Paths.get("/proc/self"), "unix:uid");
+          File podmanUserSock = new File("/var/run/user/"+uid+"/podman/podman.sock");
+          if(podmanUserSock.exists()){
+            return "unix:///var/run/user/1000/podman/podman.sock";
+          }
+        }catch(IOException io){
+          //ignore.
+        }
+
+        //none of the known linux filesystem locations had socket files, default to docker
+        //and assume the user has a plan we don't know about =)
+        return "unix:///var/run/docker.sock";
+      }
+      default:
+        return "unix:///var/run/docker.sock";
     }
   }
 }

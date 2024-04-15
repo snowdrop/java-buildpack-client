@@ -14,6 +14,8 @@ public interface ContainerEntry {
 
   public long getSize();
 
+  public Integer getMode();
+
   public DataSupplier getDataSupplier();
 
   @FunctionalInterface

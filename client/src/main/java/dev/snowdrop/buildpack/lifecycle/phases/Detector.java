@@ -60,31 +60,39 @@ public class Detector implements LifecyclePhase{
         // detector phase must run as non-root
         int runAsId = factory.getBuilderImage().getUserId();
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
-        log.info("- detect container id " + id+ " will be run with uid "+runAsId);        
+        try{
+            log.info("- detect container id " + id+ " will be run with uid "+runAsId);                         
 
-        // launch the container!
-        log.info("- launching detect container");
-        factory.getDockerConfig().getDockerClient().startContainerCmd(id).exec();
+            // launch the container!
+            log.info("- launching detect container");
+            factory.getDockerConfig().getDockerClient().startContainerCmd(id).exec();
 
+            log.info("- attaching log relay");
+            // grab the logs to stdout.
+            factory.getDockerConfig().getDockerClient().logContainerCmd(id)
+                .withFollowStream(true)
+                .withStdOut(true)
+                .withStdErr(true)
+                .withTimestamps(useTimestamps)
+                .exec(new ContainerLogReader(logger));
 
-        log.info("- attaching log relay");
-        // grab the logs to stdout.
-        factory.getDockerConfig().getDockerClient().logContainerCmd(id)
-               .withFollowStream(true)
-               .withStdOut(true)
-               .withStdErr(true)
-               .withTimestamps(useTimestamps)
-               .exec(new ContainerLogReader(logger));
+            // wait for the container to complete, and retrieve the exit code.
+            int rc = factory.getDockerConfig().getDockerClient().waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
+            log.info("Buildpack detect container complete, with exit code " + rc);   
+            
+            analyzedToml = ContainerUtils.getFileFromContainer(factory.getDockerConfig().getDockerClient(), 
+                                                            id, 
+                                                            LifecyclePhaseFactory.LAYERS_VOL_PATH + "/analyzed.toml");
 
-        // wait for the container to complete, and retrieve the exit code.
-        int rc = factory.getDockerConfig().getDockerClient().waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
-        log.info("Buildpack detect container complete, with exit code " + rc);   
-        
-        analyzedToml = ContainerUtils.getFileFromContainer(factory.getDockerConfig().getDockerClient(), 
-                                                           id, 
-                                                           LifecyclePhaseFactory.LAYERS_VOL_PATH + "/analyzed.toml");
-
-        return ContainerStatus.of(rc,id);
+            return ContainerStatus.of(rc,id);
+        }catch(Exception e){
+            if(id!=null){
+                log.info("Exception during detect, removing container "+id);
+                ContainerUtils.removeContainer(factory.getDockerConfig().getDockerClient(), id);
+                log.info("remove complete");
+            }
+            throw e;
+        }
     }
 
     public byte[] getAnalyzedToml(){

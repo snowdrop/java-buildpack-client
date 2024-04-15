@@ -12,11 +12,13 @@ public class StreamContent implements Content {
 
   private final String path;
   private final Long size;
+  private final Integer mode;
   private final DataSupplier dataSupplier;
 
-  public StreamContent(String path, Long size, DataSupplier dataSupplier) {
+  public StreamContent(String path, Long size, Integer mode, DataSupplier dataSupplier) {
     this.path = path;
     this.size = size;
+    this.mode = mode;
     this.dataSupplier = dataSupplier;
   }
 
@@ -35,6 +37,11 @@ public class StreamContent implements Content {
         @Override
         public long getSize() {
           return size;
+        }
+
+        @Override
+        public Integer getMode() {
+          return mode;
         }
       });
   }

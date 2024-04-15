@@ -97,7 +97,7 @@ class VolumeUtilsTest {
 
         scu.when(() -> ContainerUtils.createContainer(eq(dc), anyString(), anyList(), ArgumentMatchers.<VolumeBind>any())).thenReturn(containerId);
 
-        boolean result = VolumeUtils.addContentToVolume(dc, volumeName, "tianon/true", entryName, entryContent);
+        boolean result = VolumeUtils.addContentToVolume(dc, volumeName, "tianon/true", entryName, 0777, entryContent);
         assertTrue(result);
 
         scu.verify(() -> ContainerUtils.addContentToContainer(eq(dc), eq(containerId), anyString(), anyInt(), anyInt(), ArgumentMatchers.<ContainerEntry>argThat(ce -> {

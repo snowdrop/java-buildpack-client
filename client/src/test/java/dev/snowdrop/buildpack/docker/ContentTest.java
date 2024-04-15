@@ -14,7 +14,7 @@ public class ContentTest {
         Content c = new Content(){
             @Override
             public List<ContainerEntry> getContainerEntries() {
-                return new StringContent("/fish", "stiletto").getContainerEntries();
+                return new StringContent("/fish", 0777, "stiletto").getContainerEntries();
             }
 
         };

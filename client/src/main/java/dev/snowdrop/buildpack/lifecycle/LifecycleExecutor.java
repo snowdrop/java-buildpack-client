@@ -111,8 +111,6 @@ public class LifecycleExecutor {
                     rc=runPhase(factory.getRestorer());
                     if(rc!=0) break;
 
-                    System.out.println("Lifecycle Executor buildimage has extensions? "+factory.getBuilderImage().hasExtensions());
-
                     if(activePlatformLevel.atLeast("0.10") && factory.getBuilderImage().hasExtensions()){
                         rc=runPhase(factory.getBuildImageExtender());
                         if(rc!=0) break;

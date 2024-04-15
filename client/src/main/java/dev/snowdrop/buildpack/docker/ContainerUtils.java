@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CopyArchiveFromContainerCmd;
+import com.github.dockerjava.api.command.CopyArchiveToContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.NotFoundException;
@@ -113,6 +114,7 @@ public class ContainerUtils {
     }
 
     CreateContainerResponse ccr = ccc.exec();
+
     return ccr.getId();
   }
 
@@ -121,7 +123,7 @@ public class ContainerUtils {
   }  
 
   public static void removeContainer(DockerClient dc, String containerId) {
-    dc.removeContainerCmd(containerId).exec();
+    dc.removeContainerCmd(containerId).withForce(true).exec();
   }
 
   public static void addContentToContainer(DockerClient dc, String containerId, List<ContainerEntry> entries) {
@@ -129,7 +131,7 @@ public class ContainerUtils {
   }
   
   public static void addContentToContainer(DockerClient dc, String containerId, ContainerEntry... entries) {
-    addContentToContainer(dc, containerId, "", 0, 0, entries);
+    addContentToContainer(dc, containerId, "", null, null, entries);
   }
 
   public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId,
@@ -138,8 +140,8 @@ public class ContainerUtils {
   }
 
   public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId,
-      Integer groupId, String name, String content) {
-    addContentToContainer(dc, containerId, pathInContainer, userId, groupId, new StringContent(name, content).getContainerEntries());
+      Integer groupId, String name, Integer mode, String content) {
+    addContentToContainer(dc, containerId, pathInContainer, userId, groupId, new StringContent(name, mode, content).getContainerEntries());
   }
 
   /**
@@ -158,12 +160,13 @@ public class ContainerUtils {
           // add parents of this FIRST
           addParents(tout, seenDirs, uid, gid, parent);
           
-          log.debug("adding "+parent+"/");
+          log.debug("adding "+parent+"/ to tar");
           // and then add this =)
           TarArchiveEntry tae = new TarArchiveEntry(parent + "/");
           tae.setSize(0);
           tae.setUserId(uid);
-          tae.setGroupId(gid);
+          tae.setGroupId(gid);     
+          tae.setMode(TarArchiveEntry.DEFAULT_DIR_MODE);
           tout.putArchiveEntry(tae);
           tout.closeArchiveEntry();
         }
@@ -182,14 +185,17 @@ public class ContainerUtils {
 
   public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId, Integer groupId, ContainerEntry... entries) {
 
+    log.info("Adding to container "+containerId+" pathInContainer "+pathInContainer);
+
     Set<String> seenDirs = new HashSet<>();
     // Don't add entry for "/", causes issues with tar format.
     seenDirs.add("");
 
     // use supplied pathInContainer, trim off trailing "/" where required.
-    final String path = (!pathInContainer.isEmpty() && pathInContainer.endsWith("/"))
+    final String containerPath = (!pathInContainer.isEmpty() && pathInContainer.endsWith("/"))
         ? pathInContainer.substring(0, pathInContainer.length() - 1)
         : pathInContainer;
+
     // set uid/gid to the supplied values, or 0 if not supplied.
     final int uid = (userId != null) ? userId : 0;
     final int gid = (groupId != null) ? groupId : 0;
@@ -212,18 +218,18 @@ public class ContainerUtils {
               
               if (entryPath.startsWith("/"))
                 entryPath = entryPath.substring(1);
-              String pathWithEntry = path + "/" + entryPath;
 
               // important! adds the parent dirs for the entries with the correct uid/gid.
               // (otherwise various buildpack tasks won't be able to write to them!)
-              addParents(tout, seenDirs, uid, gid, pathWithEntry);
+              addParents(tout, seenDirs, uid, gid, entryPath);
               
-              log.debug("adding "+pathWithEntry);
+              log.debug("adding "+entryPath+" to tar");
               // add this file entry.
-              TarArchiveEntry tae = new TarArchiveEntry(pathWithEntry);
+              TarArchiveEntry tae = new TarArchiveEntry(entryPath);
               tae.setSize(ve.getSize());
               tae.setUserId(uid);
-              tae.setGroupId(gid);
+              tae.setGroupId(gid);                            
+              tae.setMode(0100000 + ve.getMode()); //0100000 means 'regular file'
               tout.putArchiveEntry(tae);
               DataSupplier cs = ve.getDataSupplier();
               if(cs==null) {
@@ -245,10 +251,15 @@ public class ContainerUtils {
         } 
         };
 
+      log.info("Copying archive to container at "+containerPath);
+
       Runnable reader = new Runnable() {
         @Override
         public void run() {
-          dc.copyArchiveToContainerCmd(containerId).withRemotePath("/").withTarInputStream(in).exec();
+          CopyArchiveToContainerCmd c = dc.copyArchiveToContainerCmd(containerId)
+                                          .withRemotePath(containerPath)
+                                          .withTarInputStream(in);
+          c.exec();
         }
       };
 
@@ -284,11 +295,8 @@ public class ContainerUtils {
       try{
         TarArchiveEntry tarEntry = tarInput.getNextTarEntry();
         while(tarEntry!=null){
-            //tarEntry.getName does not include path.. 
-            //if(path.equals(tarEntry.getName())){
-                copy(tarInput, file);
-                file.close();           
-            //}
+            copy(tarInput, file);
+            file.close();           
             tarEntry = tarInput.getNextTarEntry();
         }
         return file.toByteArray();

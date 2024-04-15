@@ -2,6 +2,7 @@ package dev.snowdrop.buildpack.config;
 
 import com.github.dockerjava.api.DockerClient;
 
+import dev.snowdrop.buildpack.BuildpackException;
 import dev.snowdrop.buildpack.docker.DockerClientUtils;
 import io.sundr.builder.annotations.Buildable;
 
@@ -34,6 +35,12 @@ public class DockerConfig {
         this.dockerNetwork = dockerNetwork;
         this.useDaemon = useDaemon != null ? useDaemon : Boolean.TRUE; //default daemon to true for back compat.
         this.dockerClient = dockerClient != null ? dockerClient : DockerClientUtils.getDockerClient(this.dockerHost);
+
+        try{
+            this.dockerClient.pingCmd().exec();
+        }catch(Exception e){
+            throw new BuildpackException("Unable to verify docker settings", e);
+        }
     }
 
     public Integer getPullTimeout(){

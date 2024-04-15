@@ -7,6 +7,7 @@ import com.github.dockerjava.api.command.WaitContainerResultCallback;
 
 import dev.snowdrop.buildpack.BuilderImage;
 import dev.snowdrop.buildpack.ContainerLogReader;
+import dev.snowdrop.buildpack.docker.ContainerUtils;
 import dev.snowdrop.buildpack.lifecycle.ContainerStatus;
 import dev.snowdrop.buildpack.lifecycle.LifecyclePhase;
 import dev.snowdrop.buildpack.lifecycle.LifecyclePhaseFactory;
@@ -56,27 +57,36 @@ public class Restorer implements LifecyclePhase{
 
         int runAsId = factory.getBuilderImage().getUserId();
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
-        log.info("- restorer container id " + id+ " will be run with uid "+runAsId+" and args "+args);
-        System.out.println("- restorer container id " + id+ " will be run with uid "+runAsId+" and args "+args);
+        try{
+            log.info("- restorer container id " + id+ " will be run with uid "+runAsId+" and args "+args);
+            System.out.println("- restorer container id " + id+ " will be run with uid "+runAsId+" and args "+args);
 
-        // launch the container!
-        log.info("- launching restorer container");
-        factory.getDockerConfig().getDockerClient().startContainerCmd(id).exec();
+            // launch the container!
+            log.info("- launching restorer container");
+            factory.getDockerConfig().getDockerClient().startContainerCmd(id).exec();
 
-        log.info("- attaching log relay");
-        // grab the logs to stdout.
-        factory.getDockerConfig().getDockerClient().logContainerCmd(id)
-               .withFollowStream(true)
-               .withStdOut(true)
-               .withStdErr(true)
-               .withTimestamps(useTimestamps)
-               .exec(new ContainerLogReader(logger));
+            log.info("- attaching log relay");
+            // grab the logs to stdout.
+            factory.getDockerConfig().getDockerClient().logContainerCmd(id)
+                .withFollowStream(true)
+                .withStdOut(true)
+                .withStdErr(true)
+                .withTimestamps(useTimestamps)
+                .exec(new ContainerLogReader(logger));
 
-        // wait for the container to complete, and retrieve the exit code.
-        int rc = factory.getDockerConfig().getDockerClient().waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
-        log.info("Buildpack restorer container complete, with exit code " + rc);    
+            // wait for the container to complete, and retrieve the exit code.
+            int rc = factory.getDockerConfig().getDockerClient().waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
+            log.info("Buildpack restorer container complete, with exit code " + rc);    
 
-        return ContainerStatus.of(rc,id);
+            return ContainerStatus.of(rc,id);
+        }catch(Exception e){
+            if(id!=null){
+                log.info("Exception during restorer, removing container "+id);
+                ContainerUtils.removeContainer(factory.getDockerConfig().getDockerClient(), id);
+                log.info("remove complete");
+            }
+            throw e;
+        }
     }
     
 }

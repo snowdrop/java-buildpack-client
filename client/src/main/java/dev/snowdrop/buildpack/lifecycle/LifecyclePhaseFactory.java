@@ -164,6 +164,7 @@ public class LifecyclePhaseFactory {
             .flatMap(c -> c.getContainerEntries().stream())
             .collect(Collectors.toList());
 
+        log.info("Adding aplication to volume "+applicationVolume);
         VolumeUtils.addContentToVolume(dockerConfig.getDockerClient(), 
                                        applicationVolume,
                                        originalBuilder.getImage().getReference(), 
@@ -188,9 +189,10 @@ public class LifecyclePhaseFactory {
         //add the environment entries to the platform volume.
         List<ContainerEntry> envEntries = platformConfig.getEnvironment().entrySet()
                                                      .stream()
-                                                     .flatMap(e -> new StringContent(e.getKey(), e.getValue()).getContainerEntries().stream())
+                                                     .flatMap(e -> new StringContent(e.getKey(), 0777, e.getValue()).getContainerEntries().stream())
                                                      .collect(Collectors.toList());
 
+        log.info("Adding platform entries to platform volume "+platformVolume);
         VolumeUtils.addContentToVolume(dockerConfig.getDockerClient(), 
                                        platformVolume,
                                        originalBuilder.getImage().getReference(),
@@ -201,6 +203,7 @@ public class LifecyclePhaseFactory {
     }
 
     public void tidyUp(){
+        log.info("- tidying up the build volumes");
         // remove volumes
         // (note when/if we persist the cache between builds, we'll be more selective here over what we remove)
         if (buildCacheConfig.getDeleteCacheAfterBuild()) {

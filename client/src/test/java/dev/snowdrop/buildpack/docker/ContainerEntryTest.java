@@ -28,6 +28,11 @@ public class ContainerEntryTest {
             }
 
             @Override
+            public Integer getMode() {
+                return 0755;
+            }
+
+            @Override
             public DataSupplier getDataSupplier() {
                 return new DataSupplier(){
                     @Override
@@ -41,6 +46,8 @@ public class ContainerEntryTest {
 
         assertEquals("fish", ce.getPath());
         assertEquals(1337, ce.getSize());
+        assertEquals(0755, ce.getMode());
+
 
         assertNotNull(ce.getDataSupplier().getData());
         BufferedReader br = new BufferedReader(new InputStreamReader(ce.getDataSupplier().getData(), StandardCharsets.UTF_8));

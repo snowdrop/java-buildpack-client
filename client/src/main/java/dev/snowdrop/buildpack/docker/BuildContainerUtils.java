@@ -67,6 +67,7 @@ public class BuildContainerUtils {
                             tae.setSize(0);
                             tae.setUserId(uid);
                             tae.setGroupId(gid);
+                            tae.setMode(TarArchiveEntry.DEFAULT_DIR_MODE);
                             tout.putArchiveEntry(tae);
                             tout.closeArchiveEntry();
                         } 
@@ -121,29 +122,37 @@ public class BuildContainerUtils {
         List<String> command = Stream.of("").collect(Collectors.toList());
         String builderContainerId = ContainerUtils.createContainer(dc, baseBuilder.getImage().getReference(), command);        
 
-        if(lifecycle!=null)
-            processBuildModule(dc, builderContainerId, lifecycle.getReference(), "/cnb/lifecycle", "/cnb");
+        try{
+            if(lifecycle!=null)
+                processBuildModule(dc, builderContainerId, lifecycle.getReference(), "/cnb/lifecycle", "/cnb");
 
-        if(extensions!=null)
-            for(ImageReference extension: extensions)
-                processBuildModule(dc, builderContainerId, extension.getReference(), "/cnb/extensions", "/cnb");
-        
-        if(buildpacks!=null)
-            for(ImageReference buildpack: buildpacks)
-                processBuildModule(dc, builderContainerId, buildpack.getReference(), "/cnb/buildpacks", "/cnb");
+            if(extensions!=null)
+                for(ImageReference extension: extensions)
+                    processBuildModule(dc, builderContainerId, extension.getReference(), "/cnb/extensions", "/cnb");
+            
+            if(buildpacks!=null)
+                for(ImageReference buildpack: buildpacks)
+                    processBuildModule(dc, builderContainerId, buildpack.getReference(), "/cnb/buildpacks", "/cnb");
 
-        populateMountPointDirs(dc, builderContainerId, baseBuilder.getUserId(), baseBuilder.getGroupId(), 
-                               Stream.of(LifecyclePhaseFactory.KANIKO_VOL_PATH,
-                                         LifecyclePhaseFactory.WORKSPACE_VOL_PATH,
-                                         LifecyclePhaseFactory.LAYERS_VOL_PATH,
-                                         LifecyclePhaseFactory.CACHE_VOL_PATH,
-                                         LifecyclePhaseFactory.LAUNCH_CACHE_VOL_PATH,
-                                         LifecyclePhaseFactory.PLATFORM_VOL_PATH,
-                                         LifecyclePhaseFactory.PLATFORM_VOL_PATH+LifecyclePhaseFactory.ENV_PATH_PREFIX)
-                                      .collect(Collectors.toList()));                
+            populateMountPointDirs(dc, builderContainerId, baseBuilder.getUserId(), baseBuilder.getGroupId(), 
+                                Stream.of(LifecyclePhaseFactory.KANIKO_VOL_PATH,
+                                            LifecyclePhaseFactory.WORKSPACE_VOL_PATH,
+                                            LifecyclePhaseFactory.LAYERS_VOL_PATH,
+                                            LifecyclePhaseFactory.CACHE_VOL_PATH,
+                                            LifecyclePhaseFactory.LAUNCH_CACHE_VOL_PATH,
+                                            LifecyclePhaseFactory.DOCKER_SOCKET_PATH,
+                                            LifecyclePhaseFactory.PLATFORM_VOL_PATH,
+                                            LifecyclePhaseFactory.PLATFORM_VOL_PATH+LifecyclePhaseFactory.ENV_PATH_PREFIX)
+                                        .collect(Collectors.toList()));                
 
-        return new BuilderImage(baseBuilder,
-                                (extensions!=null && !extensions.isEmpty()), 
-                                new ImageReference(ContainerUtils.commitContainer(dc, builderContainerId)));
+            //commit the live container with the modifications and return it as the new Builder Image.
+            return new BuilderImage(baseBuilder,
+                                    (extensions!=null && !extensions.isEmpty()), 
+                                    new ImageReference(ContainerUtils.commitContainer(dc, builderContainerId)));
+        }finally{
+            if(builderContainerId!=null){
+                ContainerUtils.removeContainer(dc, builderContainerId);
+            }
+        }
     }
 }
