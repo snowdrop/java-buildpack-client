@@ -497,97 +497,7 @@ public class DetectorTest {
         verify(logCmd).withTimestamps(true);
         verify(dockerClient).logContainerCmd(CONTAINER_ID);
         verify(factory).getContainerForPhase(any(String[].class), eq(USER_ID));
-    } 
-    
-    @SuppressWarnings("resource")
-    @Test
-    void test10WithDaemon(@Mock LifecyclePhaseFactory factory, 
-                  @Mock BuilderImage builder, 
-                  @Mock LogConfig logConfig, 
-                  @Mock DockerConfig dockerConfig, 
-                  @Mock DockerClient dockerClient,
-                  @Mock StartContainerCmd startCmd,
-                  @Mock LogContainerCmd logCmd,
-                  @Mock WaitContainerCmd waitCmd,
-                  @Mock WaitContainerResultCallback waitResult,
-                  @Mock Logger logger
-                  ) {
-        
-        String  PLATFORM_LEVEL="0.10";
-        String  LOG_LEVEL="debug";
-        String  CONTAINER_ID="999";
-        int     CONTAINER_RC=99;
-        int     USER_ID=77;
-        int     GROUP_ID=88;
-        String  OUTPUT_IMAGE="stiletto";
-        boolean USE_DAEMON=true;
-        boolean HAS_EXTENSIONS=true; 
-
-        lenient().when(dockerConfig.getUseDaemon()).thenReturn(USE_DAEMON);
-        lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);        
-        lenient().when(factory.getDockerConfig()).thenReturn(dockerConfig);
-
-        lenient().doNothing().when(startCmd).exec();
-        lenient().when(dockerClient.startContainerCmd(any())).thenReturn(startCmd);
-
-        lenient().when(logCmd.withFollowStream(any())).thenReturn(logCmd);
-        lenient().when(logCmd.withStdOut(any())).thenReturn(logCmd);
-        lenient().when(logCmd.withStdErr(any())).thenReturn(logCmd);
-        lenient().when(logCmd.withTimestamps(any())).thenReturn(logCmd);
-        lenient().when(logCmd.exec(any())).thenReturn(null);
-        lenient().when(dockerClient.logContainerCmd(any())).thenReturn(logCmd);
-
-        lenient().when(waitCmd.exec(any())).thenReturn(waitResult);
-        lenient().when(waitResult.awaitStatusCode()).thenReturn(CONTAINER_RC);
-        lenient().when(dockerClient.waitContainerCmd(any())).thenReturn(waitCmd);
-
-        lenient().when(logConfig.getLogLevel()).thenReturn(LOG_LEVEL);
-        lenient().when(factory.getLogConfig()).thenReturn(logConfig);
-
-        lenient().when(builder.getUserId()).thenReturn(USER_ID);
-        lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
-        lenient().when(builder.hasExtensions()).thenReturn(HAS_EXTENSIONS);
-        lenient().when(factory.getBuilderImage()).thenReturn(builder);
-
-        lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
-
-        lenient().when(factory.getContainerForPhase(argsCaptor.capture(), any())).thenReturn(CONTAINER_ID);
-
-        lenient().when(factory.getOutputImage()).thenReturn(new ImageReference(OUTPUT_IMAGE));
-
-        try (MockedStatic<? extends ContainerUtils> containerUtils = mockStatic(ContainerUtils.class)) {
-            Detector d = new Detector(factory);
-
-            containerUtils.when(() -> ContainerUtils.getFileFromContainer(eq(dockerClient), any(), any())).thenReturn("EmptyTOML".getBytes());
-
-            ContainerStatus cs = d.runPhase(logger, true);
-
-            assertNotNull(cs);
-            assertEquals(CONTAINER_ID, cs.getContainerId());
-            assertEquals(CONTAINER_RC, cs.getRc());
-
-            assertEquals("EmptyTOML", new String(d.getAnalyzedToml()));
-        }
-
-        String[] args = argsCaptor.getValue();
-        assertNotNull(args);
-        //verify 1st & last elements
-        assertEquals("/cnb/lifecycle/detector", args[0]);
-        assertNotEquals(args[args.length-1], OUTPUT_IMAGE);
-
-        List<String> argList = Arrays.asList(args);
-        //verify  generated for a 0.10 run with extensions
-        assertTrue(argList.contains("-generated"));
-        //verify dameon
-        assertTrue(argList.contains("-daemon"));
-        //verify log as expected
-        assertTrue(argList.contains(LOG_LEVEL));
-
-        verify(logCmd).withTimestamps(true);
-        verify(dockerClient).logContainerCmd(CONTAINER_ID);
-        verify(factory).getContainerForPhase(any(String[].class), eq(USER_ID));
-    }        
+    }      
 
     @SuppressWarnings("resource")
     @Test
@@ -610,7 +520,7 @@ public class DetectorTest {
         int     USER_ID=77;
         int     GROUP_ID=88;
         String  OUTPUT_IMAGE="stiletto";
-        boolean USE_DAEMON=true;
+        boolean USE_DAEMON=false;
         boolean HAS_EXTENSIONS=true; 
 
         lenient().when(dockerConfig.getUseDaemon()).thenReturn(USE_DAEMON);
@@ -670,7 +580,7 @@ public class DetectorTest {
         //verify  generated for a 0.10 run with extensions
         assertTrue(argList.contains("-generated"));
         //verify dameon
-        assertTrue(argList.contains("-daemon"));
+        assertFalse(argList.contains("-daemon"));
         //verify log as expected
         assertTrue(argList.contains(LOG_LEVEL));
 

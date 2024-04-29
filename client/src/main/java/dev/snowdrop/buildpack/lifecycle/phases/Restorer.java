@@ -51,11 +51,14 @@ public class Restorer implements LifecyclePhase{
             args.addArg("-build-image", originalBuilder.getImage().getReference());
         }
 
+        int runAsId = factory.getBuilderImage().getUserId();
+
         if(factory.getPlatformLevel().atLeast("0.12") && factory.getDockerConfig().getUseDaemon()){
             args.addArg("-daemon");
+            runAsId = 0;
         }
 
-        int runAsId = factory.getBuilderImage().getUserId();
+
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
         try{
             log.info("- restorer container id " + id+ " will be run with uid "+runAsId+" and args "+args);

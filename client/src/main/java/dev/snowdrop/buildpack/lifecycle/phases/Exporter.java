@@ -50,12 +50,15 @@ public class Exporter implements LifecyclePhase{
             args.addArg("-run", "/cnb/run.toml");
         }
 
-        //if using daemon, add daemon arg
+        int runAsId = factory.getBuilderImage().getUserId();
+
+        //if using daemon, add daemon arg, run as root
         if(factory.getDockerConfig().getUseDaemon()){
             args.addArg("-daemon");  
+            runAsId = 0;
         }        
 
-        int runAsId = factory.getBuilderImage().getUserId();
+
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
         try{
             log.info("- export container id " + id+ " will be run with uid "+runAsId);        

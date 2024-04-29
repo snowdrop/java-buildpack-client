@@ -15,7 +15,10 @@ public class VolumeUtils {
 
   private static final Logger log = LoggerFactory.getLogger(VolumeUtils.class);
 
-  final static String mountPrefix = "/volumecontent";
+  //It is critical that we use a mountpoint that exists and is not owned by root, otherwise the volume can gain
+  //'sticky' root ownership that cannot be undone. As such, we use the /workspace dir, as we know the ephemeral builder
+  //will have this present as owned by build uid/gid.
+  final static String mountPrefix = "/workspace";
 
   public static boolean createVolumeIfRequired(DockerClient dc, String volumeName) {
     if (!exists(dc, volumeName)) {

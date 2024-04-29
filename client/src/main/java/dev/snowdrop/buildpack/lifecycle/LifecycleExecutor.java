@@ -1,5 +1,7 @@
 package dev.snowdrop.buildpack.lifecycle;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tomlj.Toml;
 import org.tomlj.TomlParseResult;
 
@@ -12,6 +14,8 @@ import dev.snowdrop.buildpack.lifecycle.phases.Detector;
 
 public class LifecycleExecutor {
 
+    private static final Logger log = LoggerFactory.getLogger(LifecycleExecutor.class);
+
     private final BuildConfig config;
     private final LifecyclePhaseFactory factory;
     private final Version activePlatformLevel;
@@ -19,17 +23,19 @@ public class LifecycleExecutor {
 
     private boolean useCreator(boolean extensionsPresent, Boolean trustBuilder) {
         if(trustBuilder==null){
-            return extensionsPresent;
+            log.debug("Trusted Builder not requested, extensions are present? "+extensionsPresent);
+            return !extensionsPresent;
         }
 
-        if(!trustBuilder) 
+        if(!trustBuilder){
+            log.debug("Trusted builder explicitly set to false");
             return false;
-        else{
+        }else{
             if(extensionsPresent) {
-                config.getLogConfig().getLogger().stdout("request to trust builder ignored, as extensions are present");
+                log.info("request to trust builder ignored, as extensions are present");
                 return false;
             }
-
+            log.debug("request to trust builder honored, will use creator");
             return true;
         }
     }  

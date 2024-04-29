@@ -245,13 +245,13 @@ public class pack {
 ./pack.java
 ```
 
-See how it's used in the included [samples](./samples).
+The samples use jbang too, but allow the version of the library to be set via an env var for use in our tests! [samples](./samples).
 
 ## FAQ:
 
 **Will this work with Podman?:**
 
-It should do =) I've got some testing to run still.
+Yes, tested with podman on fedora, rootless and rootful. 
 
 **Does this work on Windows?:**
 

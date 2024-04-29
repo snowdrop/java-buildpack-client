@@ -52,11 +52,6 @@ public class Detector implements LifecyclePhase{
             args.addArg("-run", "/cnb/run.toml");
         }
 
-        //if using daemon, add daemon arg
-        if(factory.getDockerConfig().getUseDaemon()){
-            args.addArg("-daemon");  
-        }
-
         // detector phase must run as non-root
         int runAsId = factory.getBuilderImage().getUserId();
         String id = factory.getContainerForPhase(args.toArray(), runAsId);

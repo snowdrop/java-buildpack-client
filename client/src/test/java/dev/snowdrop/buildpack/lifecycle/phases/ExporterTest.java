@@ -528,7 +528,7 @@ public class ExporterTest {
 
         verify(logCmd).withTimestamps(true);
         verify(dockerClient).logContainerCmd(CONTAINER_ID);
-        verify(factory).getContainerForPhase(any(String[].class), eq(USER_ID));
+        verify(factory).getContainerForPhase(any(String[].class), eq(0));
     }     
 
 }

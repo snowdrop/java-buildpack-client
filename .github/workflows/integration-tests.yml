@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [8, 11]
+        java: [8, 11, 17]
         jbang: [0.84.2]
     steps:
       - name: Checkout
@@ -68,6 +68,21 @@ jobs:
 
       - name: Integration Tests
         run: |
+          if [ ${{ github.event_name }} = 'pull_request' ]; then
+              REPO="${{ github.event.pull_request.head.repo.full_name }}"
+              REPO_NAME=`echo $REPO | cut -d'/' -f2`
+              REPO_OWNER=`echo $REPO | cut -d'/' -f1`
+              SHA="${{ github.event.pull_request.head.sha }}"
+          else
+              REPO="$GITHUB_REPOSITORY"
+              REPO_NAME=`echo $REPO | cut -d'/' -f2`
+              REPO_OWNER=`echo $REPO | cut -d'/' -f1`
+              SHA=$GITHUB_SHA
+          fi
+          export CURRENT_WORKFLOW_DEP=com.github.$REPO_OWNER.$REPO_NAME:buildpack-client:$SHA
+          echo Tests using dependency $CURRENT_WORKFLOW_DEP
           cd samples/hello-spring
+          ./pack.java
+          cd ../../samples/hello-quarkus
           ./pack.java
           

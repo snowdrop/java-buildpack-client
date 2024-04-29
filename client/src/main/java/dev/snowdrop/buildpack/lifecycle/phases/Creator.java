@@ -36,7 +36,6 @@ public class Creator implements LifecyclePhase{
         args.addArg("-platform", LifecyclePhaseFactory.PLATFORM_VOL_PATH);
         args.addArg("-run-image", factory.getBuilderImage().getRunImages(factory.getPlatformLevel()).get(0));
         args.addArg("-log-level", factory.getLogConfig().getLogLevel());
-        args.addArg("-skip-restore", "false");
 
         if(factory.getPlatformLevel().atLeast("0.9") && factory.getDockerConfig().getUseDaemon()){
             args.addArg("-launch-cache", LifecyclePhaseFactory.LAUNCH_CACHE_VOL_PATH);
@@ -46,14 +45,12 @@ public class Creator implements LifecyclePhase{
         if(factory.getDockerConfig().getUseDaemon()){
             args.addArg("-daemon");  
         }
-
-        // TODO: add labels for container for creator etc (as per spec)
     
         //creator process always has to run as root.
         int runAsId = 0;
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
         try{
-            log.info("- creator container id " + id+ " will be run with uid "+runAsId);
+            log.info("- creator container id " + id+ " will be run with uid "+runAsId+" and args "+args);
 
             // launch the container!
             log.info("- launching build container");

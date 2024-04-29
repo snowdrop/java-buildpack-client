@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import dev.snowdrop.buildpack.config.DockerConfig;
 import dev.snowdrop.buildpack.config.PlatformConfig;
 import dev.snowdrop.buildpack.docker.BuildContainerUtils;
@@ -13,6 +16,7 @@ import dev.snowdrop.buildpack.lifecycle.Version;
 import dev.snowdrop.buildpack.utils.LifecycleMetadata;
 
 public class BuildpackBuild {
+    private static final Logger log = LoggerFactory.getLogger(BuildpackBuild.class);
 
     //platforms stored in order of preference.
     private final List<String> supportedPlatformLevels =Stream.of("0.12", "0.11", "0.10", "0.9", "0.8", "0.7", "0.6", "0.5", "0.4").collect(Collectors.toList());
@@ -82,6 +86,13 @@ public class BuildpackBuild {
                                                                  null, 
                                                                  null);
         try{
+            log.info("Initiating buildpack build with config \n"+
+                     " - ephemeralBuilder "+extendedBuilder.getImage().getReference()+"\n"+
+                     " - baseBuilder "+builder.getImage().getReference()+"\n"+
+                     " - activePlatformLevel "+activePlatformLevel+"\n"+
+                     " - build uid:gid "+extendedBuilder.getUserId()+":"+extendedBuilder.getGroupId()+"\n"+
+                     " - withExtensions "+extendedBuilder.hasExtensions());
+                     
              // execute the build using the lifecycle.
             LifecycleExecutor le = new LifecycleExecutor(config, builder, extendedBuilder, activePlatformLevel); 
             return le.execute();

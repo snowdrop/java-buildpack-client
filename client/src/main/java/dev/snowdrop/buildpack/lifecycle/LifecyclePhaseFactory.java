@@ -43,7 +43,7 @@ public class LifecyclePhaseFactory {
     public final static String DOCKER_SOCKET_PATH = "/var/run/docker.sock";
 
     public final static String APP_PATH_PREFIX = ""; //previously /content to avoid permissions, should not be issue with extended builder.
-    public final static String ENV_PATH_PREFIX = "/env";
+    public final static String ENV_PATH_PREFIX = "";
 
     private final DockerConfig     dockerConfig;
     private final CacheConfig      buildCacheConfig;
@@ -112,7 +112,8 @@ public class LifecyclePhaseFactory {
         if(dockerConfig.getUseDaemon())
           log.info("- mounted " + dockerConfig.getDockerSocket() + " at " + LifecyclePhaseFactory.DOCKER_SOCKET_PATH);
         log.info("- mounted " + outputVolume + " at " + LAYERS_VOL_PATH);
-        log.info("- build container id " + id);        
+        log.info("- container id " + id);
+        log.info("- image reference "+builder.getImage().getReference()); 
         return id;
     }
 
@@ -167,7 +168,7 @@ public class LifecyclePhaseFactory {
         log.info("Adding aplication to volume "+applicationVolume);
         VolumeUtils.addContentToVolume(dockerConfig.getDockerClient(), 
                                        applicationVolume,
-                                       originalBuilder.getImage().getReference(), 
+                                       builder.getImage().getReference(), 
                                        LifecyclePhaseFactory.APP_PATH_PREFIX, 
                                        builder.getUserId(), 
                                        builder.getGroupId(), 
@@ -189,13 +190,13 @@ public class LifecyclePhaseFactory {
         //add the environment entries to the platform volume.
         List<ContainerEntry> envEntries = platformConfig.getEnvironment().entrySet()
                                                      .stream()
-                                                     .flatMap(e -> new StringContent(e.getKey(), 0777, e.getValue()).getContainerEntries().stream())
+                                                     .flatMap(e -> new StringContent("env/"+e.getKey(), 0777, e.getValue()).getContainerEntries().stream())
                                                      .collect(Collectors.toList());
 
         log.info("Adding platform entries to platform volume "+platformVolume);
         VolumeUtils.addContentToVolume(dockerConfig.getDockerClient(), 
                                        platformVolume,
-                                       originalBuilder.getImage().getReference(),
+                                       builder.getImage().getReference(),
                                        LifecyclePhaseFactory.ENV_PATH_PREFIX, 
                                        builder.getUserId(), 
                                        builder.getGroupId(),

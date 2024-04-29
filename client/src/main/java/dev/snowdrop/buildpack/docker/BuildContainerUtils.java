@@ -13,6 +13,8 @@ import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CopyArchiveFromContainerCmd;
@@ -25,6 +27,8 @@ import dev.snowdrop.buildpack.lifecycle.LifecyclePhaseFactory;
 
 //used to create ephemeral builder, streaming tarball content from one image to another.
 public class BuildContainerUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(BuildContainerUtils.class);
 
     private static InputStream getArchiveStreamFromContainer(DockerClient dc, String containerId, String path){
         CopyArchiveFromContainerCmd copyLifecyleFromImageCmd = dc.copyArchiveFromContainerCmd(containerId, path);
@@ -119,6 +123,8 @@ public class BuildContainerUtils {
      */
     public static BuilderImage createBuildImage(DockerClient dc, BuilderImage baseBuilder, ImageReference lifecycle, List<ImageReference> extensions, List<ImageReference> buildpacks) {
 
+        log.debug("Creating Ephemeral image, from "+baseBuilder.getImage().getReference()+" with uid:gid "+baseBuilder.getUserId()+":"+baseBuilder.getGroupId());
+
         List<String> command = Stream.of("").collect(Collectors.toList());
         String builderContainerId = ContainerUtils.createContainer(dc, baseBuilder.getImage().getReference(), command);        
 
@@ -140,7 +146,6 @@ public class BuildContainerUtils {
                                             LifecyclePhaseFactory.LAYERS_VOL_PATH,
                                             LifecyclePhaseFactory.CACHE_VOL_PATH,
                                             LifecyclePhaseFactory.LAUNCH_CACHE_VOL_PATH,
-                                            LifecyclePhaseFactory.DOCKER_SOCKET_PATH,
                                             LifecyclePhaseFactory.PLATFORM_VOL_PATH,
                                             LifecyclePhaseFactory.PLATFORM_VOL_PATH+LifecyclePhaseFactory.ENV_PATH_PREFIX)
                                         .collect(Collectors.toList()));                

@@ -55,13 +55,14 @@ public class Analyzer implements LifecyclePhase{
             args.addArg("-launch-cache", LifecyclePhaseFactory.LAUNCH_CACHE_VOL_PATH);
         }
 
-        //if using daemon, add daemon arg
-        if(factory.getDockerConfig().getUseDaemon()){
-            args.addArg("-daemon");  
-        }
-    
-
         int runAsId = factory.getBuilderImage().getUserId();
+
+        //if using daemon, add daemon arg, run as root
+        if(factory.getDockerConfig().getUseDaemon()){
+            args.addArg("-daemon");
+            runAsId = 0;
+        }
+
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
         try{
             log.info("- analyze container id " + id+ " will be run with uid "+runAsId);
