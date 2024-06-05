@@ -2,6 +2,8 @@ package dev.snowdrop.buildpack.docker;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -15,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -28,6 +31,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.platform.commons.util.ReflectionUtils;
 import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
@@ -42,6 +46,7 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.HostConfig;
 
 import dev.snowdrop.buildpack.BuildpackException;
+import dev.snowdrop.buildpack.utils.FilePermissions;
 
 @ExtendWith(MockitoExtension.class)
 class ContainerUtilsTest {
@@ -141,7 +146,8 @@ class ContainerUtilsTest {
     String id = "fish";
 
     when(dc.removeContainerCmd(id)).thenReturn(rcc);
-
+    when(rcc.withForce(anyBoolean())).thenReturn(rcc);
+    
     ContainerUtils.removeContainer(dc, id);
 
     verify(rcc).exec();
@@ -160,7 +166,7 @@ class ContainerUtilsTest {
     String containerId = "id";
 
     when(dc.copyArchiveToContainerCmd(containerId)).thenReturn(catcc);
-    when(catcc.withRemotePath(anyString())).thenReturn(catcc);
+    when(catcc.withRemotePath(contentPath)).thenReturn(catcc);
     when(catcc.withTarInputStream(argThat(x -> {
       if (x != null) {
         try (BufferedInputStream bis = new BufferedInputStream(x);
@@ -169,7 +175,7 @@ class ContainerUtilsTest {
           TarArchiveEntry entry;
           while ((entry = (TarArchiveEntry) tais.getNextEntry()) != null) {
             if (!entry.isDirectory()) {
-              if (entry.getName().equals(contentPath.substring(1) + "/" + contentName) && entry.getLongUserId() == userid
+              if (entry.getName().equals(contentName) && entry.getLongUserId() == userid
                   && entry.getLongGroupId() == group) {
                 return true;
               }
@@ -187,7 +193,7 @@ class ContainerUtilsTest {
 
     }))).thenReturn(catcc);
 
-    ContainerUtils.addContentToContainer(dc, containerId, contentPath, userid, group, contentName, content);
+    ContainerUtils.addContentToContainer(dc, containerId, contentPath, userid, group, contentName, 0777, content);
 
     verify(catcc).exec();
   }
@@ -205,7 +211,7 @@ class ContainerUtilsTest {
     String containerId = "id";
 
     when(dc.copyArchiveToContainerCmd(containerId)).thenReturn(catcc);
-    when(catcc.withRemotePath(anyString())).thenReturn(catcc);
+    when(catcc.withRemotePath(contentPath)).thenReturn(catcc);
     when(catcc.withTarInputStream(argThat(x -> {
       if (x != null) {
         try (BufferedInputStream bis = new BufferedInputStream(x);
@@ -214,7 +220,7 @@ class ContainerUtilsTest {
           TarArchiveEntry entry;
           while ((entry = (TarArchiveEntry) tais.getNextEntry()) != null) {
             if (!entry.isDirectory()) {
-              if (entry.getName().equals(contentPath.substring(1) + "/" + contentName) && entry.getLongUserId() == userid
+              if (entry.getName().equals(contentName) && entry.getLongUserId() == userid
                   && entry.getLongGroupId() == group) {
                 return true;
               }
@@ -232,7 +238,7 @@ class ContainerUtilsTest {
 
     }))).thenReturn(catcc);
 
-    ContainerUtils.addContentToContainer(dc, containerId, contentPath, userid, group, new StringContent(contentName, content).getContainerEntries());
+    ContainerUtils.addContentToContainer(dc, containerId, contentPath, userid, group, new StringContent(contentName, 0777, content).getContainerEntries());
 
     verify(catcc).exec();
   }
@@ -250,7 +256,7 @@ class ContainerUtilsTest {
     String containerId = "id";
 
     when(dc.copyArchiveToContainerCmd(containerId)).thenReturn(catcc);
-    when(catcc.withRemotePath(anyString())).thenReturn(catcc);
+    when(catcc.withRemotePath(contentPath)).thenReturn(catcc);
     when(catcc.withTarInputStream(argThat(x -> {
       if (x != null) {
         try (BufferedInputStream bis = new BufferedInputStream(x);
@@ -259,7 +265,7 @@ class ContainerUtilsTest {
           TarArchiveEntry entry;
           while ((entry = (TarArchiveEntry) tais.getNextEntry()) != null) {
             if (!entry.isDirectory()) {
-              if (entry.getName().equals(contentPath.substring(1) + "/" + contentName) && entry.getLongUserId() == userid
+              if (entry.getName().equals(contentName) && entry.getLongUserId() == userid
                   && entry.getLongGroupId() == group) {
                 return true;
               }
@@ -277,7 +283,7 @@ class ContainerUtilsTest {
 
     }))).thenReturn(catcc);
 
-    ContainerUtils.addContentToContainer(dc, containerId, contentPath, userid, group, new StringContent(contentName, content).getContainerEntries().toArray(new ContainerEntry[0]));
+    ContainerUtils.addContentToContainer(dc, containerId, contentPath, userid, group, new StringContent(contentName, 0777, content).getContainerEntries().toArray(new ContainerEntry[0]));
 
     verify(catcc).exec();
   }
@@ -292,7 +298,7 @@ class ContainerUtilsTest {
     String containerId = "id";
 
     when(dc.copyArchiveToContainerCmd(containerId)).thenReturn(catcc);
-    when(catcc.withRemotePath(anyString())).thenReturn(catcc);
+    when(catcc.withRemotePath("")).thenReturn(catcc);
     when(catcc.withTarInputStream(argThat(x -> {
       if (x != null) {
         try (BufferedInputStream bis = new BufferedInputStream(x);
@@ -301,7 +307,7 @@ class ContainerUtilsTest {
           TarArchiveEntry entry;
           while ((entry = (TarArchiveEntry) tais.getNextEntry()) != null) {
             if (!entry.isDirectory()) {
-              if (entry.getName().equals(contentPath.substring(1) + "/" + contentName) && entry.getLongUserId() == 0
+              if (entry.getName().equals(contentPath.substring(1)+"/"+contentName) && entry.getLongUserId() == 0
                   && entry.getLongGroupId() == 0) {
                 return true;
               }
@@ -319,7 +325,7 @@ class ContainerUtilsTest {
 
     }))).thenReturn(catcc);
 
-    ContainerUtils.addContentToContainer(dc, containerId, new StringContent(contentPath+"/"+contentName, content).getContainerEntries());
+    ContainerUtils.addContentToContainer(dc, containerId, new StringContent(contentPath+"/"+contentName, 0777, content).getContainerEntries());
 
     verify(catcc).exec();
   }  
@@ -334,7 +340,7 @@ class ContainerUtilsTest {
     String containerId = "id";
 
     when(dc.copyArchiveToContainerCmd(containerId)).thenReturn(catcc);
-    when(catcc.withRemotePath(anyString())).thenReturn(catcc);
+    when(catcc.withRemotePath("")).thenReturn(catcc);
     when(catcc.withTarInputStream(argThat(x -> {
       if (x != null) {
         try (BufferedInputStream bis = new BufferedInputStream(x);
@@ -361,7 +367,7 @@ class ContainerUtilsTest {
 
     }))).thenReturn(catcc);
 
-    ContainerUtils.addContentToContainer(dc, containerId, new StringContent(contentPath+"/"+contentName, content).getContainerEntries().toArray(new ContainerEntry[0]));
+    ContainerUtils.addContentToContainer(dc, containerId, new StringContent(contentPath+"/"+contentName, 0777, content).getContainerEntries().toArray(new ContainerEntry[0]));
 
     verify(catcc).exec();
   }   
@@ -376,7 +382,7 @@ class ContainerUtilsTest {
     String containerId = "id";
 
     when(dc.copyArchiveToContainerCmd(containerId)).thenReturn(catcc);
-    when(catcc.withRemotePath(anyString())).thenReturn(catcc);
+    when(catcc.withRemotePath(contentPath)).thenReturn(catcc);
     when(catcc.withTarInputStream(argThat(x -> {
       if (x != null) {
         try (BufferedInputStream bis = new BufferedInputStream(x);
@@ -385,7 +391,7 @@ class ContainerUtilsTest {
           TarArchiveEntry entry;
           while ((entry = (TarArchiveEntry) tais.getNextEntry()) != null) {
             if (!entry.isDirectory()) {
-              if (entry.getName().equals(contentPath.substring(1) + "/" + contentName) && entry.getLongUserId() == 0
+              if (entry.getName().equals(contentName) && entry.getLongUserId() == 0
                   && entry.getLongGroupId() == 0) {
                 return true;
               }
@@ -403,7 +409,7 @@ class ContainerUtilsTest {
 
     }))).thenReturn(catcc);
 
-    ContainerUtils.addContentToContainer(dc, containerId, contentPath, null, null, contentName, content);
+    ContainerUtils.addContentToContainer(dc, containerId, contentPath, null, null, contentName, 0777, content);
 
     verify(catcc).exec();
   }
@@ -425,6 +431,10 @@ class ContainerUtilsTest {
       public long getSize() {
         return 0;
       }
+
+      public Integer getMode() {
+        return 0644;
+      }      
 
       public DataSupplier getDataSupplier() {
         return null;
@@ -455,6 +465,10 @@ class ContainerUtilsTest {
 
       public long getSize() {
         throw BuildpackException.launderThrowable(new IOException("Test"));
+      }
+
+      public Integer getMode() {
+        return 0644;
       }
 
       public DataSupplier getDataSupplier() {
@@ -489,6 +503,10 @@ class ContainerUtilsTest {
         return 4;
       }
 
+      public Integer getMode() {
+        return 0644;
+      }
+
       public DataSupplier getDataSupplier() {
         return null;
       }
@@ -517,6 +535,10 @@ class ContainerUtilsTest {
 
       public long getSize() {
         return 4;
+      }
+
+      public Integer getMode() {
+        return 0644;
       }
 
       public DataSupplier getDataSupplier() {
@@ -554,6 +576,10 @@ class ContainerUtilsTest {
         return 4;
       }
 
+      public Integer getMode() {
+        return 0644;
+      }
+
       public DataSupplier getDataSupplier() {
         return new DataSupplier() {
           public InputStream getData() {
@@ -579,8 +605,24 @@ class ContainerUtilsTest {
       @Mock FileSystemProvider fsp,
       @Mock BasicFileAttributes bfa) {
 
-    String containerId = "id";
+    //this test will cause FileContent to obtain permnissions, which ends up at Files.getPosixPermissions
+    //sadly, the invocation is on a different thread (handled during the tar stream in/out), so we cannot
+    //mock Files as a static with mockito, instead the call is delegated via an instance of a class that 
+    //we can swap via reflection, still ugly, but at least functional.
+    try{
+        Field perms = ReflectionUtils.findFields(FileContent.class, 
+                                                field->field.getName().equals("filePermissions"), 
+                                                ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
+                                     .get(0);
+        perms.setAccessible(true);
+        perms.set(null, new FilePermissions(){
+          public Integer getPermissions(File file){ return 0777; }
+        });
+    }catch(Exception e){
+        fail();
+    }
 
+    String containerId = "id";
     when(dc.copyArchiveToContainerCmd(containerId)).thenReturn(catcc);
     when(catcc.withRemotePath(anyString())).thenReturn(catcc);
     when(catcc.withTarInputStream(argThat(x -> {
@@ -592,7 +634,8 @@ class ContainerUtilsTest {
           while ((entry = (TarArchiveEntry) tais.getNextEntry()) != null) {
             if (!entry.isDirectory()) {
               if (entry.getName().equals("wibble") && entry.getLongUserId() == 0
-                  && entry.getLongGroupId() == 0 && entry.getSize()==4L) {
+                  && entry.getLongGroupId() == 0 && entry.getSize()==4L && entry.getMode()==(0100000 + 0777)) {
+                    //note 0100000 means 'regular file', 0777 are the perms. (0 prefix is octal)
                 return true;
               }
             }
@@ -612,8 +655,7 @@ class ContainerUtilsTest {
     when(f.isFile()).thenReturn(true);
     when(f.isDirectory()).thenReturn(false);
     when(f.getName()).thenReturn("wibble");
-    when(f.toPath()).thenReturn(p);
-    
+    when(f.toPath()).thenReturn(p); 
     when(p.getFileSystem()).thenReturn(fs);
     when(fs.provider()).thenReturn(fsp);
     
@@ -628,6 +670,7 @@ class ContainerUtilsTest {
     ContainerUtils.addContentToContainer(dc, containerId, "/", 0,0, f);
 
     verify(catcc).exec();
+    
   }
 
   @Test
@@ -635,6 +678,7 @@ class ContainerUtilsTest {
   {
     String containerId = "id";
     when(dc.removeContainerCmd(containerId)).thenReturn(rcc);
+    when(rcc.withForce(anyBoolean())).thenReturn(rcc);
     ContainerUtils.removeContainer(dc, containerId);
     verify(rcc).exec();
   }

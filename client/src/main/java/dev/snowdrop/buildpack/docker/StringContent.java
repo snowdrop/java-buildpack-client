@@ -11,10 +11,12 @@ import io.sundr.builder.annotations.Buildable;
 public class StringContent implements Content {
 
   private final String path;
+  private final Integer mode;
   private final String content;
 
-  public StringContent(String path, String content) {
+  public StringContent(String path, Integer mode, String content) {
     this.path = path;
+    this.mode = mode;
     this.content = content;
   }
 
@@ -37,6 +39,11 @@ public class StringContent implements Content {
       @Override
       public String getPath() {
         return path;
+      }
+
+      @Override
+      public Integer getMode() {
+        return mode;
       }
 
       @Override
