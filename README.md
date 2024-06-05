@@ -160,7 +160,7 @@ or
 ```java
 int exitCode = BuildConfig.builder()
                           .withNewLogConfig()
-                              .withLogger(new SystemLogger())
+                              .withLogger(new Slf4jLogger())
                               .withLogLevel("debug")
                               .and()
                           .withOutputImage(new ImageReference("test/testimage:latest"))
@@ -251,7 +251,7 @@ The samples use jbang too, but allow the version of the library to be set via an
 
 **Will this work with Podman?:**
 
-Yes, tested with podman on fedora, rootless and rootful. 
+Yes, tested with Podman 4.7.0 on Fedora, rootless and rootful. 
 
 **Does this work on Windows?:**
 
@@ -265,10 +265,11 @@ Tested with Ubuntu & Fedora with Docker
 
 **Can I supply buildpacks/extensions to add to a builder like pack?:**
 
-The code should support this now, internally. It hasn't been exposed yet, as
-in addition to supplying the buildpacks/extensions, a new order.toml must be 
-created combining the builder order with supplied content, and work is required
-to see how that should look.
+The code is structured to allow for this, but the feature is not exposed via the builder api,
+as using additional buildpacks/extensions requires updating order.toml in the base builder,
+and that would require additional config to either override, or specify the behavior for manipulating
+the toml. If you are interested in this kind of functionality, raise an Issue so I can better understand
+the use case, or send a PR!
 
 
 

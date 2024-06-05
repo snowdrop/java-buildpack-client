@@ -73,18 +73,16 @@ public class DockerClientUtils {
           int uid = (Integer)Files.getAttribute(Paths.get("/proc/self"), "unix:uid");
           File podmanUserSock = new File("/var/run/user/"+uid+"/podman/podman.sock");
           if(podmanUserSock.exists()){
-            return "unix:///var/run/user/1000/podman/podman.sock";
+            return "unix:///var/run/user/"+uid+"/podman/podman.sock";
           }
         }catch(IOException io){
           //ignore.
         }
-
-        //none of the known linux filesystem locations had socket files, default to docker
-        //and assume the user has a plan we don't know about =)
-        return "unix:///var/run/docker.sock";
       }
-      default:
-        return "unix:///var/run/docker.sock";
     }
+
+    //none of the known locations had socket files, default to docker
+    //and assume the user has a plan we don't know about =)
+    return "unix:///var/run/docker.sock";
   }
 }
