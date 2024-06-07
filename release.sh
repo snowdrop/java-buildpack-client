@@ -19,7 +19,7 @@ fi
 # Set release version in the samples & readme
 #
 find ./samples/ -iwholename "*/pack.java" | while read f; do
-    sed -i "s/\/\/DEPS dev.snowdrop:buildpack-client:.*/\/\/DEPS dev.snowdrop:buildpack-client:${release_version}/g" $f
+    sed -i "s/dev.snowdrop:buildpack-client:.*/dev.snowdrop:buildpack-client:${release_version}\}/g" $f
     git add $f
 done
 sed -i "s/\/\/DEPS dev.snowdrop:buildpack-client:.*/\/\/DEPS dev.snowdrop:buildpack-client:${release_version}/g" README.md
