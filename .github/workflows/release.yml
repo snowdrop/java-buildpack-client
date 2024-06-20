@@ -36,7 +36,7 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: 'maven'
-          server-id: ossrh
+          server-id: oss-sonatype-staging
           server-username: OSS_SONATYPE_USERNAME
           server-password: OSS_SONATYPE_PASSWORD
           gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
