@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.atLeast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +28,7 @@ import com.github.dockerjava.api.command.PullImageCmd;
 import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.Image;
 
+import dev.snowdrop.buildpack.config.DockerConfig;
 import dev.snowdrop.buildpack.docker.ImageUtils.ImageInfo;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,31 +64,38 @@ public class ImageUtilsTest {
   }
   
   @Test
-  void testPullImageSingleUnknown(@Mock DockerClient dc,
+  void testPullImageSingleUnknown(@Mock DockerConfig config, 
+      @Mock DockerClient dc,
       @Mock ListImagesCmd lic,
       @Mock PullImageCmd pic) throws InterruptedException {
     
     String imageName = "test";
     
-    when(dc.listImagesCmd()).thenReturn(lic);
-    when(lic.exec()).thenReturn(new ArrayList<Image>());
+    lenient().when(config.getDockerClient()).thenReturn(dc);
+    lenient().when(config.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
+    lenient().when(dc.listImagesCmd()).thenReturn(lic);
+    lenient().when(lic.exec()).thenReturn(new ArrayList<Image>());
     
     when(dc.pullImageCmd(eq(imageName))).thenReturn(pic);
     
-    ImageUtils.pullImages(dc, 0, imageName);
+    ImageUtils.pullImages(config, imageName);
     
-    verify(pic).exec(ArgumentMatchers.any());
+    verify(pic, atLeast(1)).exec(ArgumentMatchers.any());
   }
   
   @Test
-  void testPullImageSingleKnown(@Mock DockerClient dc,
+  void testPullImageSingleKnown(@Mock DockerConfig config, 
+      @Mock DockerClient dc,
       @Mock ListImagesCmd lic,
       @Mock Image i,
       @Mock PullImageCmd pic) throws InterruptedException {
     
     String imageName = "test";
-    
-    when(dc.listImagesCmd()).thenReturn(lic);
+
+    lenient().when(config.getDockerClient()).thenReturn(dc);
+    lenient().when(config.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
+    lenient().when(dc.listImagesCmd()).thenReturn(lic);
+
     List<Image> li = new ArrayList<Image>();
     li.add(i);
     when(lic.exec()).thenReturn(li);
@@ -93,7 +103,7 @@ public class ImageUtilsTest {
 
     //when(dc.pullImageCmd(eq(imageName))).thenReturn(pic);
     
-    ImageUtils.pullImages(dc, 0, imageName);
+    ImageUtils.pullImages(config, imageName);
     
     verify(pic, never()).exec(ArgumentMatchers.any());
   }

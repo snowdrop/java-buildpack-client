@@ -87,6 +87,7 @@ public class LifecycleExecutorTest {
 
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
         lenient().when(dockerConfig.getPullTimeout()).thenReturn(66);
+        lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
         lenient().when(config.getBuildCacheConfig()).thenReturn(buildCacheConfig);
@@ -123,7 +124,7 @@ public class LifecycleExecutorTest {
             MockedStatic<? extends ImageUtils> imageUtils = mockStatic(ImageUtils.class)) {
 
             containerUtils.when(() -> ContainerUtils.removeContainer(eq(dockerClient), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
-            imageUtils.when(() -> ImageUtils.pullImages(dockerClient, 66, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
 
             LifecycleExecutor le = new LifecycleExecutor(config, extendedBuilder, origBuilder, PLATFORM_LEVEL);
             
@@ -190,6 +191,7 @@ public class LifecycleExecutorTest {
 
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
         lenient().when(dockerConfig.getPullTimeout()).thenReturn(66);
+        lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
         lenient().when(config.getBuildCacheConfig()).thenReturn(buildCacheConfig);
@@ -226,7 +228,7 @@ public class LifecycleExecutorTest {
             MockedStatic<? extends ImageUtils> imageUtils = mockStatic(ImageUtils.class)) {
 
             containerUtils.when(() -> ContainerUtils.removeContainer(eq(dockerClient), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
-            imageUtils.when(() -> ImageUtils.pullImages(dockerClient, 66, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig,"newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
 
             LifecycleExecutor le = new LifecycleExecutor(config, extendedBuilder, origBuilder, PLATFORM_LEVEL);
             
@@ -291,6 +293,7 @@ public class LifecycleExecutorTest {
         lenient().when(logConfig.getUseTimestamps()).thenReturn(true);
         lenient().when(logConfig.getLogger()).thenReturn(logger);
 
+        lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
         lenient().when(dockerConfig.getPullTimeout()).thenReturn(66);
 
@@ -329,7 +332,7 @@ public class LifecycleExecutorTest {
             MockedStatic<? extends ImageUtils> imageUtils = mockStatic(ImageUtils.class)) {
 
             containerUtils.when(() -> ContainerUtils.removeContainer(eq(dockerClient), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
-            imageUtils.when(() -> ImageUtils.pullImages(dockerClient, 66, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
 
             LifecycleExecutor le = new LifecycleExecutor(config, extendedBuilder, origBuilder, PLATFORM_LEVEL);
             
@@ -395,6 +398,7 @@ public class LifecycleExecutorTest {
         lenient().when(logConfig.getUseTimestamps()).thenReturn(true);
         lenient().when(logConfig.getLogger()).thenReturn(logger);
 
+        lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
         lenient().when(dockerConfig.getPullTimeout()).thenReturn(66);
 
@@ -437,7 +441,7 @@ public class LifecycleExecutorTest {
             MockedStatic<? extends ImageUtils> imageUtils = mockStatic(ImageUtils.class)) {
 
             containerUtils.when(() -> ContainerUtils.removeContainer(eq(dockerClient), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
-            imageUtils.when(() -> ImageUtils.pullImages(dockerClient, 66, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
 
             LifecycleExecutor le = new LifecycleExecutor(config, extendedBuilder, origBuilder, PLATFORM_LEVEL);
             
@@ -506,6 +510,7 @@ public class LifecycleExecutorTest {
         lenient().when(logConfig.getUseTimestamps()).thenReturn(true);
         lenient().when(logConfig.getLogger()).thenReturn(logger);
 
+        lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
         lenient().when(dockerConfig.getPullTimeout()).thenReturn(66);
 
@@ -548,7 +553,7 @@ public class LifecycleExecutorTest {
             MockedStatic<? extends ImageUtils> imageUtils = mockStatic(ImageUtils.class)) {
 
             containerUtils.when(() -> ContainerUtils.removeContainer(eq(dockerClient), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
-            imageUtils.when(() -> ImageUtils.pullImages(dockerClient, 66, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
 
             LifecycleExecutor le = new LifecycleExecutor(config, extendedBuilder, origBuilder, PLATFORM_LEVEL);
             

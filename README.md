@@ -33,7 +33,9 @@ The [`BuildpackConfig`](client/src/main/java/dev/snowdrop/buildpack/BuildConfig.
 
 - run/build/output Image can be specified
 - docker can be configured with.. 
-    - pull timeout
+    - pull timeout 
+    - pull retry count (will retry image pull on failure)
+    - pull retry timeout increase (increases timeout each time pull is retried)
     - host
     - network
     - docker socket path
