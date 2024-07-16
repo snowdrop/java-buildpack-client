@@ -44,9 +44,7 @@ public class BuilderImage {
         image = builderImage;
 
         // pull and inspect the builderImage to obtain builder metadata.
-        ImageUtils.pullImages(dc.getDockerClient(), 
-                              dc.getPullTimeout(), 
-                              builderImage.getReference());
+        ImageUtils.pullImages(dc, builderImage.getReference());
 
         ImageInfo ii = ImageUtils.inspectImage(dc.getDockerClient(), 
                                                builderImage.getReference());

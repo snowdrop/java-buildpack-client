@@ -20,9 +20,7 @@ public class LifecycleMetadata {
     public LifecycleMetadata(DockerConfig dc, ImageReference lifecycleImage) throws BuildpackException {
 
         // pull and inspect the builderImage to obtain builder metadata.
-        ImageUtils.pullImages(dc.getDockerClient(), 
-                              dc.getPullTimeout(), 
-                              lifecycleImage.getReference());
+        ImageUtils.pullImages(dc,lifecycleImage.getReference());
 
         ImageInfo ii = ImageUtils.inspectImage(dc.getDockerClient(), 
                                                lifecycleImage.getReference());

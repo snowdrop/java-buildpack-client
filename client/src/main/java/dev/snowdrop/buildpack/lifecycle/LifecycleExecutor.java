@@ -105,7 +105,7 @@ public class LifecycleExecutor {
                         }
 
                         //pull the new image.. 
-                        ImageUtils.pullImages(config.getDockerConfig().getDockerClient(), factory.getDockerConfig().getPullTimeout(), newRunImage);
+                        ImageUtils.pullImages(config.getDockerConfig(), newRunImage);
 
                         //update run image associated with our builder image.
                         factory.getBuilderImage().getRunImages(activePlatformLevel).clear();

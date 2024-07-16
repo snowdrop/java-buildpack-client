@@ -20,8 +20,8 @@ public class pack {
       System.setProperty("org.slf4j.simpleLogger.log.dev.snowdrop.buildpack.lifecycle.phases","debug");      
 
       int exitCode = BuildConfig.builder()
-                           .withBuilderImage(new ImageReference("paketocommunity/builder-ubi-base:latest"))
-                           .withOutputImage(new ImageReference("snowdrop/hello-quarkus:latest"))
+                           .withBuilderImage(new ImageReference("docker.io/paketocommunity/builder-ubi-base"))
+                           .withOutputImage(new ImageReference("snowdrop/hello-quarkus"))
                            .withNewLogConfig()
                               .withLogger(new SystemLogger())
                               .withLogLevel("debug")
