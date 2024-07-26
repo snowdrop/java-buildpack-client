@@ -107,6 +107,7 @@ public class ContainerUtils {
 
     if (command != null) {
       ccc.withCmd(command);
+      ccc.withEntrypoint("");
     }
 
     if (network!=null){
