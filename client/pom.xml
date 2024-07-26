@@ -4,7 +4,7 @@
     <parent>
       <groupId>dev.snowdrop</groupId>
       <artifactId>buildpack-client-project</artifactId>
-      <version>0.0.11</version>
+      <version>0.0.12-SNAPSHOT</version>
       <relativePath>..</relativePath>
     </parent>
 
