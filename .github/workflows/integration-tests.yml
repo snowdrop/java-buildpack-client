@@ -38,6 +38,17 @@ jobs:
         java: [8, 11, 17]
         jbang: [0.84.2]
     steps:
+      - name: Freee Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+          
       - name: Checkout
         uses: actions/checkout@v2.3.4
 
