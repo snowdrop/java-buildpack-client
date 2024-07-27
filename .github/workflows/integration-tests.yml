@@ -31,7 +31,7 @@ on:
 
 jobs:
   integration-tests:
-    name: Package Samples with Java ${{ matrix.java }} and JBang ${{ matrix.jbang }}
+    name: Run Sample ${{ matrix.project }} with Java ${{ matrix.java }} and JBang ${{ matrix.jbang }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
