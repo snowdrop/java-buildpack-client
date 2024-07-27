@@ -36,6 +36,7 @@ jobs:
     strategy:
       matrix:
         java: [8, 11, 17]
+        project: [hello-spring, hello-quarkus]
         jbang: [0.84.2]
     steps:
       - name: Freee Disk Space
@@ -92,8 +93,6 @@ jobs:
           fi
           export CURRENT_WORKFLOW_DEP=com.github.$REPO_OWNER.$REPO_NAME:buildpack-client:$SHA
           echo Tests using dependency $CURRENT_WORKFLOW_DEP
-          cd samples/hello-spring
-          ./pack.java
-          cd ../../samples/hello-quarkus
+          cd samples/${{ matrix.project }}
           ./pack.java
           
