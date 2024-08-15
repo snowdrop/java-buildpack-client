@@ -136,6 +136,9 @@ public class LifecycleExecutor {
                     if(rc!=0) break;
                 }while(false);
             }
+            if(rc==0){
+                log.info("Buildpack build phases complete, application image is at "+config.getOutputImage().getReference());
+            }
             return rc;            
         }finally{
             //allow factory to clean up any volumes created

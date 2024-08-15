@@ -104,16 +104,16 @@ public class LifecyclePhaseFactory {
                                                    dockerConfig.getDockerNetwork(),
                                                    binds);
 
-        log.info("- mounted " + buildCacheVolume + " at " + CACHE_VOL_PATH);
-        log.info("- mounted " + launchCacheVolume + " at " + LAUNCH_CACHE_VOL_PATH);
-        log.info("- mounted " + kanikoCacheVolume + " at " + KANIKO_VOL_PATH);        
-        log.info("- mounted " + applicationVolume + " at " + WORKSPACE_VOL_PATH);
-        log.info("- mounted " + platformVolume + " at " + PLATFORM_VOL_PATH);
+        log.debug("- mounted " + buildCacheVolume + " at " + CACHE_VOL_PATH);
+        log.debug("- mounted " + launchCacheVolume + " at " + LAUNCH_CACHE_VOL_PATH);
+        log.debug("- mounted " + kanikoCacheVolume + " at " + KANIKO_VOL_PATH);        
+        log.debug("- mounted " + applicationVolume + " at " + WORKSPACE_VOL_PATH);
+        log.debug("- mounted " + platformVolume + " at " + PLATFORM_VOL_PATH);
         if(dockerConfig.getUseDaemon())
-          log.info("- mounted " + dockerConfig.getDockerSocket() + " at " + LifecyclePhaseFactory.DOCKER_SOCKET_PATH);
-        log.info("- mounted " + outputVolume + " at " + LAYERS_VOL_PATH);
-        log.info("- container id " + id);
-        log.info("- image reference "+builder.getImage().getReference()); 
+          log.debug("- mounted " + dockerConfig.getDockerSocket() + " at " + LifecyclePhaseFactory.DOCKER_SOCKET_PATH);
+        log.debug("- mounted " + outputVolume + " at " + LAYERS_VOL_PATH);
+        log.debug("- container id " + id);
+        log.debug("- image reference "+builder.getImage().getReference()); 
         return id;
     }
 
@@ -159,13 +159,13 @@ public class LifecyclePhaseFactory {
         // add the application to the volume. Note we are placing it at /content,
         // because the volume mountpoint is mounted such that the user has no perms to create 
         // new content there, but subdirs are ok.
-        log.info("There are "+content.size()+" entries to add for the app dir");
+        log.debug("There are "+content.size()+" entries to add for the app dir");
         List<ContainerEntry> appEntries = content
             .stream()
             .flatMap(c -> c.getContainerEntries().stream())
             .collect(Collectors.toList());
 
-        log.info("Adding aplication to volume "+applicationVolume);
+        log.info("Adding application to volume "+applicationVolume);
         VolumeUtils.addContentToVolume(dockerConfig.getDockerClient(), 
                                        applicationVolume,
                                        builder.getImage().getReference(), 
@@ -204,7 +204,7 @@ public class LifecyclePhaseFactory {
     }
 
     public void tidyUp(){
-        log.info("- tidying up the build volumes");
+        log.info("Post Build cleanup activites:");
         // remove volumes
         // (note when/if we persist the cache between builds, we'll be more selective here over what we remove)
         if (buildCacheConfig.getDeleteCacheAfterBuild()) {
@@ -222,7 +222,7 @@ public class LifecyclePhaseFactory {
         VolumeUtils.removeVolume(dockerConfig.getDockerClient(), outputVolume);
         VolumeUtils.removeVolume(dockerConfig.getDockerClient(), platformVolume);
     
-        log.info("- build volumes tidied up");     
+        log.info("- temporary build volumes removed");     
     }
 
     public BuilderImage getBuilderImage(){

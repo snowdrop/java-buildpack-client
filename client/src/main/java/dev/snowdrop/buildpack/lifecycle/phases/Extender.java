@@ -49,7 +49,8 @@ public class Extender implements LifecyclePhase{
         int runAsId = 0;
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
         try{
-            log.info("- extender container id " + id+ " will be run with uid "+runAsId);                
+            log.info("Extender container id " + id+ " will be run with uid "+runAsId);   
+            log.debug("- container args "+args);
 
             // launch the container!
             log.info("- launching extender container");
@@ -66,7 +67,7 @@ public class Extender implements LifecyclePhase{
 
             // wait for the container to complete, and retrieve the exit code.
             int rc = factory.getDockerConfig().getDockerClient().waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
-            log.info("Buildpack extender container complete, with exit code " + rc);    
+            log.info("Extender container complete, with exit code " + rc);    
 
             return ContainerStatus.of(rc,id);
         }catch(Exception e){

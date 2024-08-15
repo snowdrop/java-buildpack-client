@@ -186,7 +186,7 @@ public class ContainerUtils {
 
   public static void addContentToContainer(DockerClient dc, String containerId, String pathInContainer, Integer userId, Integer groupId, ContainerEntry... entries) {
 
-    log.info("Adding to container "+containerId+" pathInContainer "+pathInContainer);
+    log.debug("Adding to container "+containerId+" pathInContainer "+pathInContainer);
 
     Set<String> seenDirs = new HashSet<>();
     // Don't add entry for "/", causes issues with tar format.
@@ -252,7 +252,7 @@ public class ContainerUtils {
         } 
         };
 
-      log.info("Copying archive to container at "+containerPath);
+      log.debug("Copying archive to container at "+containerPath);
 
       Runnable reader = new Runnable() {
         @Override

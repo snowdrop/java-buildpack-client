@@ -86,7 +86,7 @@ public class LifecycleExecutorTest {
         lenient().when(logConfig.getLogger()).thenReturn(logger);
 
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
-        lenient().when(dockerConfig.getPullTimeout()).thenReturn(66);
+        lenient().when(dockerConfig.getPullTimeoutSeconds()).thenReturn(66);
         lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
@@ -190,7 +190,7 @@ public class LifecycleExecutorTest {
         lenient().when(logConfig.getLogger()).thenReturn(logger);
 
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
-        lenient().when(dockerConfig.getPullTimeout()).thenReturn(66);
+        lenient().when(dockerConfig.getPullTimeoutSeconds()).thenReturn(66);
         lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
@@ -295,7 +295,7 @@ public class LifecycleExecutorTest {
 
         lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
-        lenient().when(dockerConfig.getPullTimeout()).thenReturn(66);
+        lenient().when(dockerConfig.getPullTimeoutSeconds()).thenReturn(66);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
         lenient().when(config.getBuildCacheConfig()).thenReturn(buildCacheConfig);
@@ -400,7 +400,7 @@ public class LifecycleExecutorTest {
 
         lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
-        lenient().when(dockerConfig.getPullTimeout()).thenReturn(66);
+        lenient().when(dockerConfig.getPullTimeoutSeconds()).thenReturn(66);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
         lenient().when(config.getBuildCacheConfig()).thenReturn(buildCacheConfig);
@@ -512,7 +512,7 @@ public class LifecycleExecutorTest {
 
         lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
-        lenient().when(dockerConfig.getPullTimeout()).thenReturn(66);
+        lenient().when(dockerConfig.getPullTimeoutSeconds()).thenReturn(66);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
         lenient().when(config.getBuildCacheConfig()).thenReturn(buildCacheConfig);

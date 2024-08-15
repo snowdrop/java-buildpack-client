@@ -66,6 +66,12 @@ public class BuildpackBuild {
 
     public int build(){
 
+        log.info("Buildpack build requested with config: \n"+
+                 " - builder "+config.getBuilderImage().getReference()+"\n"+
+                 " - logLevel "+config.getLogConfig().getLogLevel());
+
+        log.info("Pulling Builder image");
+
         //obtain & pull & inspect Builder image.
         BuilderImage builder = new BuilderImage(config.getDockerConfig(), 
                                                 config.getPlatformConfig(), 
@@ -77,8 +83,13 @@ public class BuildpackBuild {
                                                          config.getPlatformConfig(),
                                                          builder);
 
+        log.info("Pulling Run Image(s)");
+
         //precache the runimages in the orig builder before extending it.
         builder.getRunImages(new Version(activePlatformLevel));
+
+        log.debug("Creating Ephemeral Builder Image...");
+
         //create the extended builder image.
         BuilderImage extendedBuilder = BuildContainerUtils.createBuildImage(config.getDockerConfig().getDockerClient(), 
                                                                             builder, 
@@ -86,9 +97,8 @@ public class BuildpackBuild {
                                                                  null, 
                                                                  null);
         try{
-            log.info("Initiating buildpack build with config \n"+
+            log.info("Initiating buildpack build with derived configuration: \n"+
                      " - ephemeralBuilder "+extendedBuilder.getImage().getReference()+"\n"+
-                     " - baseBuilder "+builder.getImage().getReference()+"\n"+
                      " - activePlatformLevel "+activePlatformLevel+"\n"+
                      " - build uid:gid "+extendedBuilder.getUserId()+":"+extendedBuilder.getGroupId()+"\n"+
                      " - withExtensions "+extendedBuilder.hasExtensions());

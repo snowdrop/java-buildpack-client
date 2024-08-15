@@ -50,7 +50,8 @@ public class Creator implements LifecyclePhase{
         int runAsId = 0;
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
         try{
-            log.info("- creator container id " + id+ " will be run with uid "+runAsId+" and args "+args);
+            log.info("Creator container id " + id+ " will be run with uid "+runAsId);
+            log.debug("- container args "+args);
 
             // launch the container!
             log.info("- launching build container");
@@ -67,7 +68,7 @@ public class Creator implements LifecyclePhase{
 
             // wait for the container to complete, and retrieve the exit code.
             int rc = factory.getDockerConfig().getDockerClient().waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
-            log.info("Buildpack container complete, with exit code " + rc);    
+            log.info("Creator container complete, with exit code " + rc);    
 
             return ContainerStatus.of(rc,id);
         }catch(Exception e){
