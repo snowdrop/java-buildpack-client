@@ -2,7 +2,7 @@
 
 //REPOS mavencentral,jitpack
 //DEPS org.slf4j:slf4j-simple:1.7.30
-//DEPS ${env.CURRENT_WORKFLOW_DEP:dev.snowdrop:buildpack-client:0.0.12}
+//DEPS ${env.CURRENT_WORKFLOW_DEP:dev.snowdrop:buildpack-client:0.0.13-SNAPSHOT}
 
 
 import java.io.File;
