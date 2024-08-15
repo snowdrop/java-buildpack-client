@@ -61,8 +61,8 @@ public class Restorer implements LifecyclePhase{
 
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
         try{
-            log.info("- restorer container id " + id+ " will be run with uid "+runAsId+" and args "+args);
-            System.out.println("- restorer container id " + id+ " will be run with uid "+runAsId+" and args "+args);
+            log.info("Restorer container id " + id+ " will be run with uid "+runAsId);
+            log.debug("- container args "+args);
 
             // launch the container!
             log.info("- launching restorer container");
@@ -79,7 +79,7 @@ public class Restorer implements LifecyclePhase{
 
             // wait for the container to complete, and retrieve the exit code.
             int rc = factory.getDockerConfig().getDockerClient().waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
-            log.info("Buildpack restorer container complete, with exit code " + rc);    
+            log.info("Restorer container complete, with exit code " + rc);    
 
             return ContainerStatus.of(rc,id);
         }catch(Exception e){

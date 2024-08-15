@@ -48,11 +48,14 @@ public class ImageUtils {
     if(config.getPullPolicy() == DockerConfig.PullPolicy.IF_NOT_PRESENT) {
       // list the current known images
       List<Image> li = dc.listImagesCmd().exec();
+
+      log.debug("Requested Images "+imageNameSet);
       for (Image i : li) {
         if (i.getRepoTags() == null) {
           continue;
         }
         for (String it : i.getRepoTags()) {
+          log.debug("Known Image : "+it);
           if (imageNameSet.contains(it)) {
             imageNameSet.remove(it);
           }
@@ -82,7 +85,7 @@ public class ImageUtils {
     boolean allDone = false;
     while(!allDone && retryCount<=config.getPullRetryCount()){
       allDone = true;
-      long thisWait = config.getPullTimeout()+(retryCount*config.getPullRetryIncrease());
+      long thisWait = config.getPullTimeoutSeconds()+(retryCount*config.getPullRetryIncreaseSeconds());
       for (Entry<String, PullImageResultCallback> e : pircMap.entrySet()) {
         boolean done = false;
         try {

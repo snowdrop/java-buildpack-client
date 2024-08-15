@@ -57,7 +57,7 @@ public class DockerConfig {
         }
     }
 
-    public Integer getPullTimeout(){
+    public Integer getPullTimeoutSeconds(){
         return this.pullTimeoutSeconds;
     }
 
@@ -65,7 +65,7 @@ public class DockerConfig {
         return this.pullRetryCount;
     }
 
-    public Integer getPullRetryIncrease(){
+    public Integer getPullRetryIncreaseSeconds(){
         return this.pullRetryIncreaseSeconds;
     }
 

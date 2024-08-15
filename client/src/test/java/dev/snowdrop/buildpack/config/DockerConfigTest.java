@@ -20,10 +20,10 @@ public class DockerConfigTest {
     @Test
     void checkTimeout() {
         DockerConfig dc1 = new DockerConfig(null, null, null, null, null, null, null, null, null);
-        assertEquals(60, dc1.getPullTimeout());
+        assertEquals(60, dc1.getPullTimeoutSeconds());
 
         DockerConfig dc2 = new DockerConfig(245017, null, null, null, null, null, null, null, null);
-        assertEquals(dc2.getPullTimeout(), 245017);
+        assertEquals(dc2.getPullTimeoutSeconds(), 245017);
     }
 
     @Test

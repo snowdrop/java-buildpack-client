@@ -56,7 +56,8 @@ public class Detector implements LifecyclePhase{
         int runAsId = factory.getBuilderImage().getUserId();
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
         try{
-            log.info("- detect container id " + id+ " will be run with uid "+runAsId);                         
+            log.info("Detect container id " + id+ " will be run with uid "+runAsId);
+            log.debug("- container args "+args);                         
 
             // launch the container!
             log.info("- launching detect container");
@@ -73,7 +74,7 @@ public class Detector implements LifecyclePhase{
 
             // wait for the container to complete, and retrieve the exit code.
             int rc = factory.getDockerConfig().getDockerClient().waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
-            log.info("Buildpack detect container complete, with exit code " + rc);   
+            log.info("Detect container complete, with exit code " + rc);   
             
             analyzedToml = ContainerUtils.getFileFromContainer(factory.getDockerConfig().getDockerClient(), 
                                                             id, 

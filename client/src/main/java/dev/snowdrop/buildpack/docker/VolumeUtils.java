@@ -67,7 +67,7 @@ public class VolumeUtils {
     List<String> command = Stream.of("").collect(Collectors.toList());
     String dummyId = ContainerUtils.createContainer(dc, useImage, command, new VolumeBind(volumeName, mountPrefix));
     try{
-      log.info("Adding content to volume "+volumeName+" under prefix "+prefix+" using image "+useImage+" with volume bound at "+mountPrefix+" temp container id "+dummyId);
+      log.debug("Adding content to volume "+volumeName+" under prefix "+prefix+" using image "+useImage+" with volume bound at "+mountPrefix+" temp container id "+dummyId);
       ContainerUtils.addContentToContainer(dc, dummyId, prefix, uid, gid, entries);
       return true;
     }finally{

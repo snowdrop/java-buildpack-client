@@ -65,7 +65,8 @@ public class Analyzer implements LifecyclePhase{
 
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
         try{
-            log.info("- analyze container id " + id+ " will be run with uid "+runAsId);
+            log.info("Analyze container id " + id+ " will be run with uid "+runAsId);
+            log.debug("- container args "+args);
 
             // launch the container!
             log.info("- launching analyze container");
@@ -82,7 +83,7 @@ public class Analyzer implements LifecyclePhase{
 
             // wait for the container to complete, and retrieve the exit code.
             int rc = factory.getDockerConfig().getDockerClient().waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
-            log.info("Buildpack analyze container complete, with exit code " + rc);   
+            log.info("Analyze container complete, with exit code " + rc);   
             
             return ContainerStatus.of(rc,id);
         }catch(Exception e){
