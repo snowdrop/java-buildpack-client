@@ -1,6 +1,6 @@
 # Buildpack Builder config example
 
-Example of a java project able to build a Quarkus, spring Boot, ... project
+Example of a java project able to build a Quarkus, Spring Boot, ... project
 using the DSL `BuildConfig.builder()`
 
 To use it, just configure the following env var pointing to a project to be built as a container image

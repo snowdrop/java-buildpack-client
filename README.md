@@ -217,8 +217,15 @@ If the build fails for any reason, a `BuildpackException` will be thrown, this i
 ### Maven exec:java
 
 To play with the Java Buildpack client & DSL, use the following simple java project: [samples/build-me](samples/build-me)
+
+To use it, just configure the following env var pointing to a project to be built as a container image
+
 ```bash
-export PROJECT_PATH="$HOME/path_to/java-buildpack-client/samples/hello-quarkus"
+export PROJECT_PATH=<JAVA_PROJECT>
+export IMAGE_REF=<IMAGE_REF> // quay.io/<ORG>/<IMAGE_NAME> or <IMAGE_NAME>
+```
+and execute this command in a terminal:
+```bash
 mvn compile exec:java
 ```
 
