@@ -6,7 +6,8 @@ using the DSL `BuildConfig.builder()`
 To use it, just configure the following env var pointing to a project to be built as a container image
 
 ```bash
-exort PROJECT_PATH=<JAVA_PROJECT>
+export PROJECT_PATH=<JAVA_PROJECT>
+export IMAGE_REF=<IMAGE_REF> // quay.io/<ORG>/<IMAGE_NAME> or <IMAGE_NAME>
 ```
 and execute this command in a terminal:
 ```bash

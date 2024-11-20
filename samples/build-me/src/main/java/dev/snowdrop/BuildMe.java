@@ -22,6 +22,7 @@ public class BuildMe {
         String REGISTRY_USERNAME = System.getenv("REGISTRY_USERNAME");
         String REGISTRY_PASSWORD = System.getenv("REGISTRY_PASSWORD");
         String REGISTRY_SERVER = System.getenv("REGISTRY_SERVER");
+        String IMAGE_REF = System.getenv("IMAGE_REF");
 
         String PROJECT_PATH = System.getenv("PROJECT_PATH");
         File filePath = new File(PROJECT_PATH);
@@ -39,7 +40,7 @@ public class BuildMe {
 
         int exitCode = BuildConfig.builder()
             .withBuilderImage(new ImageReference("paketocommunity/builder-ubi-base:latest"))
-            .withOutputImage(new ImageReference("quay.io/snowdrop/my-quarkus-app"))
+            .withOutputImage(new ImageReference(IMAGE_REF))
             .withNewPlatformConfig()
               .withEnvironment(envMap)
             .endPlatformConfig()
