@@ -28,6 +28,8 @@ public class BuildMe {
 
         Map<String, String> envMap = new HashMap<>();
         envMap.put("BP_JVM_VERSION", "21");
+        // envMap.put("BP_MAVEN_BUILT_ARTIFACT","target/quarkus-app/lib/ target/quarkus-app/*.jar target/quarkus-app/app/ target/quarkus-app/quarkus");
+        // envMap.put("CNB_LOG_LEVEL","trace");
 
         DockerClient client = getDockerClient();
         client.authConfig()
@@ -39,11 +41,7 @@ public class BuildMe {
             .withBuilderImage(new ImageReference("paketocommunity/builder-ubi-base:latest"))
             .withOutputImage(new ImageReference("quay.io/snowdrop/my-quarkus-app"))
             .withNewPlatformConfig()
-              .withEnvironment(Map.ofEntries(
-                  Map.entry("BP_JVM_VERSION", "21")
-                  // Map.entry("BP_MAVEN_BUILT_ARTIFACT","target/quarkus-app/lib/ target/quarkus-app/*.jar target/quarkus-app/app/ target/quarkus-app/quarkus"),
-                  // Map.entry("CNB_LOG_LEVEL","trace")
-                  ))
+              .withEnvironment(envMap)
             .endPlatformConfig()
             .withNewDockerConfig()
               .withDockerClient(client)
