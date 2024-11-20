@@ -228,6 +228,12 @@ and execute this command in a terminal:
 ```bash
 mvn compile exec:java
 ```
+**Important**: To avoid the `docker rate limit` error, set the following env var too
+```bash
+export REGISTRY_USERNAME="<REGISTRY_USERNAME>"
+export REGISTRY_PASSWORD="<REGISTRY_PASSWORD>"
+export REGISTRY_SERVER="docker.io"
+```
 
 ### Jbang
 

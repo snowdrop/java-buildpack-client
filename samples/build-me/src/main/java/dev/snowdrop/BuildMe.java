@@ -25,7 +25,6 @@ public class BuildMe {
         String IMAGE_REF = System.getenv("IMAGE_REF");
 
         String PROJECT_PATH = System.getenv("PROJECT_PATH");
-        File filePath = new File(PROJECT_PATH);
 
         Map<String, String> envMap = new HashMap<>();
         envMap.put("BP_JVM_VERSION", "21");
@@ -51,7 +50,7 @@ public class BuildMe {
               .withLogger(new SystemLogger())
               .withLogLevel("debug")
             .and()
-            .addNewFileContentApplication(filePath)
+            .addNewFileContentApplication(new File(PROJECT_PATH))
             .build()
             .getExitCode();
 
