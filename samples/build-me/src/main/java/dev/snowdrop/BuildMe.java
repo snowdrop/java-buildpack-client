@@ -28,8 +28,9 @@ public class BuildMe {
 
         Map<String, String> envMap = new HashMap<>();
         envMap.put("BP_JVM_VERSION", "21");
+        envMap.put("CNB_REGISTRY_AUTH",System.getenv("CNB_REGISTRY_AUTH"));
+        // envMap.put("CNB_LOG_LEVEL","debug");
         // envMap.put("BP_MAVEN_BUILT_ARTIFACT","target/quarkus-app/lib/ target/quarkus-app/*.jar target/quarkus-app/app/ target/quarkus-app/quarkus");
-        // envMap.put("CNB_LOG_LEVEL","trace");
 
         DockerClient client = getDockerClient();
         client.authConfig()

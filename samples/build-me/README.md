@@ -14,9 +14,16 @@ and execute this command in a terminal:
 mvn compile exec:java
 ```
 
-**Important**: To avoid the `docker rate limit` error, set the following env var too
+**Important**: To avoid the `docker rate limit` error, set the following env var:
 ```bash
 export REGISTRY_USERNAME="<REGISTRY_USERNAME>"
 export REGISTRY_PASSWORD="<REGISTRY_PASSWORD>"
 export REGISTRY_SERVER="docker.io"
+```
+and also set this one to let `lifecycle` to get rid of the docker limit:
+```bash
+export CNB_REGISTRY_AUTH="'{"index.docker.io":"Basic <BASE64_OF_USERNAME:PASSWORD>"}'"
+
+// Replace `<BASE64_OF_USERNAME:PASSWORD> text with
+echo -n "username:password" | base64
 ```
