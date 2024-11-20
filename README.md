@@ -210,9 +210,19 @@ int exitCode = BuildConfig.builder()
 
 ## Error Handling
 
-If the build fails for any reason, a `BuildpackException` will be thrown, this is a RuntimeException, so does not need an explicit catch block. There are many many ways in which a build can fail, from something environmental, like docker being unavailable, to build related issues, like the chosen builder image requiring a platformlevel not implemented by this library. 
+If the build fails for any reason, a `BuildpackException` will be thrown, this is a RuntimeException, so does not need an explicit catch block. There are many ways in which a build can fail, from something environmental, like docker being unavailable, to build related issues, like the chosen builder image requiring a platformlevel not implemented by this library. 
 
-## Using the buildpack client with jbang
+## Using the buildpack client 
+
+### Maven exec:java
+
+To play with the Java Buildpack client & DSL, use the following simple java project: [samples/build-me](samples/build-me)
+```bash
+export PROJECT_PATH="$HOME/path_to/java-buildpack-client/samples/hello-quarkus"
+mvn compile exec:java
+```
+
+### Jbang
 
 The easiest way to invoke arbitrary java code, without much hassle is by using [jbang](https://www.jbang.dev/).
 
