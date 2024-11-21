@@ -3,6 +3,7 @@ package dev.snowdrop;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.github.dockerjava.api.DockerClient;
 import dev.snowdrop.buildpack.*;
@@ -24,12 +25,16 @@ public class BuildMe {
         String REGISTRY_SERVER = System.getenv("REGISTRY_SERVER");
         String IMAGE_REF = System.getenv("IMAGE_REF");
         String PROJECT_PATH = System.getenv("PROJECT_PATH");
+        String DOCKER_HOST = System.getenv("DOCKER_HOST");
 
-        Map<String, String> envMap = new HashMap<>();
-        envMap.put("BP_JVM_VERSION", "21");
-        envMap.put("CNB_REGISTRY_AUTH",System.getenv("CNB_REGISTRY_AUTH"));
-        // envMap.put("CNB_LOG_LEVEL","debug");
-        // envMap.put("BP_MAVEN_BUILT_ARTIFACT","target/quarkus-app/lib/ target/quarkus-app/*.jar target/quarkus-app/app/ target/quarkus-app/quarkus");
+        Map<String, String> envMap = System.getenv().entrySet().stream()
+            .filter(entry -> entry.getKey().startsWith("BP_") || entry.getKey().startsWith("CNB_"))
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (oldValue, newValue) -> newValue,
+                HashMap::new
+            ));
 
         DockerClient client = getDockerClient();
         client.authConfig()
@@ -45,6 +50,7 @@ public class BuildMe {
             .endPlatformConfig()
             .withNewDockerConfig()
               .withDockerClient(client)
+              .withDockerHost(DOCKER_HOST)
             .endDockerConfig()
             .withNewLogConfig()
               .withLogger(new SystemLogger())

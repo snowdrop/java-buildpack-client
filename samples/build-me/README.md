@@ -29,3 +29,11 @@ Execute this command in a terminal:
 ```bash
 mvn compile exec:java
 ```
+
+You can also pass the `BP_` or `CNB_` environment variables:
+```bash
+export BP_JVM_VERSION="21"
+export BP_MAVEN_BUILT_ARTIFACT="target/quarkus-app/lib/ target/quarkus-app/*.jar target/quarkus-app/app/ target/quarkus-app/quarkus"
+export CNB_LOG_LEVEL=debug
+etc
+```
