@@ -23,7 +23,6 @@ public class BuildMe {
         String REGISTRY_PASSWORD = System.getenv("REGISTRY_PASSWORD");
         String REGISTRY_SERVER = System.getenv("REGISTRY_SERVER");
         String IMAGE_REF = System.getenv("IMAGE_REF");
-
         String PROJECT_PATH = System.getenv("PROJECT_PATH");
 
         Map<String, String> envMap = new HashMap<>();
