@@ -1,9 +1,13 @@
 package dev.snowdrop.buildpack.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.github.dockerjava.api.DockerClient;
 
 import dev.snowdrop.buildpack.BuildpackException;
 import dev.snowdrop.buildpack.docker.DockerClientUtils;
+import dev.snowdrop.buildpack.docker.DockerClientUtils.HostAndSocket;
 import io.sundr.builder.annotations.Buildable;
 
 @Buildable(generateBuilderPackage=true, builderPackage="dev.snowdrop.buildpack.builder")
@@ -12,7 +16,7 @@ public class DockerConfig {
         return new DockerConfigBuilder();
     }
 
-    public static enum PullPolicy {ALWAYS, IF_NOT_PRESENT};
+    public static enum PullPolicy {ALWAYS, IF_NOT_PRESENT, NEVER};
 
     private static final Integer DEFAULT_PULL_TIMEOUT = 60;
     private static final Integer DEFAULT_PULL_RETRY_INCREASE = 15;
@@ -28,6 +32,7 @@ public class DockerConfig {
     private String dockerNetwork;
     private Boolean useDaemon;
     private DockerClient dockerClient;
+    private List<RegistryAuthConfig> authConfigs;
 
     public DockerConfig(                   
         Integer pullTimeoutSeconds, 
@@ -38,23 +43,43 @@ public class DockerConfig {
         String dockerSocket,
         String dockerNetwork,
         Boolean useDaemon, 
-        DockerClient dockerClient
+        DockerClient dockerClient,
+        List<RegistryAuthConfig> authConfigs
     ){
         this.pullTimeoutSeconds = pullTimeoutSeconds != null ? Integer.max(0,pullTimeoutSeconds) : DEFAULT_PULL_TIMEOUT;
         this.pullRetryCount = pullRetryCount != null ? Integer.max(0,pullRetryCount) : DEFAULT_PULL_RETRY_COUNT;
         this.pullRetryIncreaseSeconds = pullRetryIncreaseSeconds != null ? Integer.max(0,pullRetryIncreaseSeconds) : DEFAULT_PULL_RETRY_INCREASE;
         this.pullPolicy = pullPolicy != null ? pullPolicy : DEFAULT_PULL_POLICY;
-        this.dockerHost = dockerHost != null ? dockerHost : DockerClientUtils.getDockerHost();
-        this.dockerSocket = dockerSocket != null ? dockerSocket : (this.dockerHost.startsWith("unix://") ? this.dockerHost.substring("unix://".length()) : "/var/run/docker.sock");
         this.dockerNetwork = dockerNetwork;
         this.useDaemon = useDaemon != null ? useDaemon : Boolean.TRUE; //default daemon to true for back compat.
-        this.dockerClient = dockerClient != null ? dockerClient : DockerClientUtils.getDockerClient(this.dockerHost);
+
+        //take config values, and determine values to use.. 
+        HostAndSocket hands = DockerClientUtils.probeContainerRuntime(new DockerClientUtils.HostAndSocket(dockerHost, dockerSocket));
+        this.dockerHost = hands.host;
+        this.dockerSocket = hands.socket;
+
+        this.authConfigs = authConfigs == null ? new ArrayList<>() : authConfigs;
+
+        this.dockerClient = dockerClient != null ? dockerClient : DockerClientUtils.getDockerClient(hands, authConfigs);
 
         try{
             this.dockerClient.pingCmd().exec();
         }catch(Exception e){
             throw new BuildpackException("Unable to verify docker settings", e);
         }
+    }
+
+    public void setDockerHost(String dockerHost){
+        HostAndSocket hands = DockerClientUtils.probeContainerRuntime(new DockerClientUtils.HostAndSocket(dockerHost, this.dockerSocket));
+        this.dockerHost = hands.host;
+        this.dockerSocket = hands.socket;
+        this.dockerClient = dockerClient != null ? dockerClient : DockerClientUtils.getDockerClient(hands);        
+    }
+    public void setDockerSocket(String dockerSocket){
+        HostAndSocket hands = DockerClientUtils.probeContainerRuntime(new DockerClientUtils.HostAndSocket(this.dockerHost, dockerSocket));
+        this.dockerHost = hands.host;
+        this.dockerSocket = hands.socket;
+        this.dockerClient = dockerClient != null ? dockerClient : DockerClientUtils.getDockerClient(hands);
     }
 
     public Integer getPullTimeoutSeconds(){
@@ -91,6 +116,10 @@ public class DockerConfig {
 
     public Boolean getUseDaemon(){
         return this.useDaemon;
+    }
+
+    public List<RegistryAuthConfig> getAuthConfigs(){
+        return this.authConfigs;
     }
 }
 

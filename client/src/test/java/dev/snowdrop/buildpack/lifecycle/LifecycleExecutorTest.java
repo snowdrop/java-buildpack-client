@@ -1,11 +1,11 @@
 package dev.snowdrop.buildpack.lifecycle;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -79,8 +79,8 @@ public class LifecycleExecutorTest {
         String OUTPUT_IMAGE="fish";
         boolean HAS_EXTENSIONS=false;
 
-        List<String> runImages = new ArrayList<>();
-        runImages.add("run-image");
+        List<ImageReference> runImages = new ArrayList<>();
+        runImages.add(new ImageReference("run-image"));
 
         lenient().when(logConfig.getUseTimestamps()).thenReturn(true);
         lenient().when(logConfig.getLogger()).thenReturn(logger);
@@ -88,6 +88,7 @@ public class LifecycleExecutorTest {
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
         lenient().when(dockerConfig.getPullTimeoutSeconds()).thenReturn(66);
         lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
+        lenient().when(dockerConfig.getUseDaemon()).thenReturn(true);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
         lenient().when(config.getBuildCacheConfig()).thenReturn(buildCacheConfig);
@@ -109,7 +110,7 @@ public class LifecycleExecutorTest {
         lenient().when(lifecycleFactory.getBuilderImage()).thenReturn(extendedBuilder);
 
         lenient().when(extendedBuilder.hasExtensions()).thenReturn(HAS_EXTENSIONS);
-        lenient().when(extendedBuilder.getRunImages(any())).thenReturn(runImages);
+        lenient().when(extendedBuilder.getRunImages(any())).thenReturn(runImages.toArray(new ImageReference[]{}));
 
         lenient().when(analyzer.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"analyzer-id"));
         lenient().when(detector.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"detector-id"));
@@ -124,7 +125,7 @@ public class LifecycleExecutorTest {
             MockedStatic<? extends ImageUtils> imageUtils = mockStatic(ImageUtils.class)) {
 
             containerUtils.when(() -> ContainerUtils.removeContainer(eq(dockerClient), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
-            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig, new ImageReference("newfish"))).thenAnswer(Answers.RETURNS_DEFAULTS);
 
             LifecycleExecutor le = new LifecycleExecutor(config, extendedBuilder, origBuilder, PLATFORM_LEVEL);
             
@@ -183,8 +184,8 @@ public class LifecycleExecutorTest {
         String OUTPUT_IMAGE="fish";
         boolean HAS_EXTENSIONS=false;
 
-        List<String> runImages = new ArrayList<>();
-        runImages.add("run-image");
+        List<ImageReference> runImages = new ArrayList<>();
+        runImages.add(new ImageReference("run-image"));
 
         lenient().when(logConfig.getUseTimestamps()).thenReturn(true);
         lenient().when(logConfig.getLogger()).thenReturn(logger);
@@ -192,6 +193,7 @@ public class LifecycleExecutorTest {
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
         lenient().when(dockerConfig.getPullTimeoutSeconds()).thenReturn(66);
         lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
+        lenient().when(dockerConfig.getUseDaemon()).thenReturn(true);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
         lenient().when(config.getBuildCacheConfig()).thenReturn(buildCacheConfig);
@@ -213,7 +215,7 @@ public class LifecycleExecutorTest {
         lenient().when(lifecycleFactory.getBuilderImage()).thenReturn(extendedBuilder);
 
         lenient().when(extendedBuilder.hasExtensions()).thenReturn(HAS_EXTENSIONS);
-        lenient().when(extendedBuilder.getRunImages(any())).thenReturn(runImages);
+        lenient().when(extendedBuilder.getRunImages(any())).thenReturn(runImages.toArray(new ImageReference[]{}));
 
         lenient().when(analyzer.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"analyzer-id"));
         lenient().when(detector.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"detector-id"));
@@ -228,7 +230,7 @@ public class LifecycleExecutorTest {
             MockedStatic<? extends ImageUtils> imageUtils = mockStatic(ImageUtils.class)) {
 
             containerUtils.when(() -> ContainerUtils.removeContainer(eq(dockerClient), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
-            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig,"newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig,new ImageReference("newfish"))).thenAnswer(Answers.RETURNS_DEFAULTS);
 
             LifecycleExecutor le = new LifecycleExecutor(config, extendedBuilder, origBuilder, PLATFORM_LEVEL);
             
@@ -287,8 +289,8 @@ public class LifecycleExecutorTest {
         String OUTPUT_IMAGE="fish";
         boolean HAS_EXTENSIONS=false;
 
-        List<String> runImages = new ArrayList<>();
-        runImages.add("run-image");
+        List<ImageReference> runImages = new ArrayList<>();
+        runImages.add(new ImageReference("run-image"));
 
         lenient().when(logConfig.getUseTimestamps()).thenReturn(true);
         lenient().when(logConfig.getLogger()).thenReturn(logger);
@@ -296,6 +298,7 @@ public class LifecycleExecutorTest {
         lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
         lenient().when(dockerConfig.getPullTimeoutSeconds()).thenReturn(66);
+        lenient().when(dockerConfig.getUseDaemon()).thenReturn(true);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
         lenient().when(config.getBuildCacheConfig()).thenReturn(buildCacheConfig);
@@ -317,7 +320,7 @@ public class LifecycleExecutorTest {
         lenient().when(lifecycleFactory.getBuilderImage()).thenReturn(extendedBuilder);
 
         lenient().when(extendedBuilder.hasExtensions()).thenReturn(HAS_EXTENSIONS);
-        lenient().when(extendedBuilder.getRunImages(any())).thenReturn(runImages);
+        lenient().when(extendedBuilder.getRunImages(any())).thenReturn(runImages.toArray(new ImageReference[]{}));
 
         lenient().when(analyzer.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"analyzer-id"));
         lenient().when(detector.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"detector-id"));
@@ -332,7 +335,7 @@ public class LifecycleExecutorTest {
             MockedStatic<? extends ImageUtils> imageUtils = mockStatic(ImageUtils.class)) {
 
             containerUtils.when(() -> ContainerUtils.removeContainer(eq(dockerClient), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
-            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig, new ImageReference("newfish"))).thenAnswer(Answers.RETURNS_DEFAULTS);
 
             LifecycleExecutor le = new LifecycleExecutor(config, extendedBuilder, origBuilder, PLATFORM_LEVEL);
             
@@ -392,8 +395,8 @@ public class LifecycleExecutorTest {
         String OUTPUT_IMAGE="fish";
         boolean HAS_EXTENSIONS=true;
 
-        List<String> runImages = new ArrayList<>();
-        runImages.add("run-image");
+        List<ImageReference> runImages = new ArrayList<>();
+        runImages.add(new ImageReference("run-image"));
 
         lenient().when(logConfig.getUseTimestamps()).thenReturn(true);
         lenient().when(logConfig.getLogger()).thenReturn(logger);
@@ -401,6 +404,7 @@ public class LifecycleExecutorTest {
         lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
         lenient().when(dockerConfig.getPullTimeoutSeconds()).thenReturn(66);
+        lenient().when(dockerConfig.getUseDaemon()).thenReturn(true);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
         lenient().when(config.getBuildCacheConfig()).thenReturn(buildCacheConfig);
@@ -425,7 +429,7 @@ public class LifecycleExecutorTest {
         lenient().when(lifecycleFactory.getDockerConfig()).thenReturn(dockerConfig);
 
         lenient().when(extendedBuilder.hasExtensions()).thenReturn(HAS_EXTENSIONS);
-        lenient().when(extendedBuilder.getRunImages(any())).thenReturn(runImages);
+        lenient().when(extendedBuilder.getRunImages(any())).thenReturn(runImages.toArray(new ImageReference[]{}));
 
         lenient().when(analyzer.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"analyzer-id"));
         lenient().when(detector.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"detector-id"));
@@ -436,12 +440,14 @@ public class LifecycleExecutorTest {
         lenient().when(runExtender.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"run-extender-id"));
         lenient().when(buildExtender.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"build-extender-id"));
         lenient().when(restorer.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"restorer-id"));
+        lenient().when(restorer.getAnalyzedToml()).thenReturn("[run-image]\nreference = \"newfish@sha256:dfa6d55942f1fb88ef93b595fde877e91a4775f58ef61cebe012789f9d93ecbf\"\nextend = true".getBytes());
 
         try (MockedStatic<? extends ContainerUtils> containerUtils = mockStatic(ContainerUtils.class);
             MockedStatic<? extends ImageUtils> imageUtils = mockStatic(ImageUtils.class)) {
 
             containerUtils.when(() -> ContainerUtils.removeContainer(eq(dockerClient), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
-            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.pullImages(eq(dockerConfig), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.inspectImage(eq(dockerClient), any())).thenReturn(new ImageUtils.ImageInfo());
 
             LifecycleExecutor le = new LifecycleExecutor(config, extendedBuilder, origBuilder, PLATFORM_LEVEL);
             
@@ -460,7 +466,8 @@ public class LifecycleExecutorTest {
             le.execute();
 
             //check that we swapped to the new run image by reading the toml.
-            assertEquals("newfish", runImages.get(0));
+            verify(extendedBuilder).setRunImage(new ImageReference("newfish@sha256:dfa6d55942f1fb88ef93b595fde877e91a4775f58ef61cebe012789f9d93ecbf"));
+            //assertEquals("newfish", runImages.get(0));
 
             //ensure correct phases driven in expected order for this platform revision.
             InOrder order = Mockito.inOrder(detector,analyzer,restorer,buildExtender,exporter);
@@ -504,8 +511,8 @@ public class LifecycleExecutorTest {
         String OUTPUT_IMAGE="fish";
         boolean HAS_EXTENSIONS=true;
 
-        List<String> runImages = new ArrayList<>();
-        runImages.add("run-image");
+        List<ImageReference> runImages = new ArrayList<>();
+        runImages.add(new ImageReference("run-image"));
 
         lenient().when(logConfig.getUseTimestamps()).thenReturn(true);
         lenient().when(logConfig.getLogger()).thenReturn(logger);
@@ -513,6 +520,7 @@ public class LifecycleExecutorTest {
         lenient().when(dockerConfig.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
         lenient().when(dockerConfig.getDockerClient()).thenReturn(dockerClient);
         lenient().when(dockerConfig.getPullTimeoutSeconds()).thenReturn(66);
+        lenient().when(dockerConfig.getUseDaemon()).thenReturn(true);
 
         lenient().when(config.getDockerConfig()).thenReturn(dockerConfig);
         lenient().when(config.getBuildCacheConfig()).thenReturn(buildCacheConfig);
@@ -537,7 +545,7 @@ public class LifecycleExecutorTest {
         lenient().when(lifecycleFactory.getDockerConfig()).thenReturn(dockerConfig);
 
         lenient().when(extendedBuilder.hasExtensions()).thenReturn(HAS_EXTENSIONS);
-        lenient().when(extendedBuilder.getRunImages(any())).thenReturn(runImages);
+        lenient().when(extendedBuilder.getRunImages(any())).thenReturn(runImages.toArray(new ImageReference[]{}));
 
         lenient().when(analyzer.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"analyzer-id"));
         lenient().when(detector.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"detector-id"));
@@ -548,12 +556,14 @@ public class LifecycleExecutorTest {
         lenient().when(runExtender.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"run-extender-id"));
         lenient().when(buildExtender.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"build-extender-id"));
         lenient().when(restorer.runPhase(logger, true)).thenReturn(ContainerStatus.of(0,"restorer-id"));
+        lenient().when(restorer.getAnalyzedToml()).thenReturn("[run-image]\nreference = \"newfish@sha256:dfa6d55942f1fb88ef93b595fde877e91a4775f58ef61cebe012789f9d93ecbf\"\nextend = true".getBytes());
 
         try (MockedStatic<? extends ContainerUtils> containerUtils = mockStatic(ContainerUtils.class);
             MockedStatic<? extends ImageUtils> imageUtils = mockStatic(ImageUtils.class)) {
 
             containerUtils.when(() -> ContainerUtils.removeContainer(eq(dockerClient), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
-            imageUtils.when(() -> ImageUtils.pullImages(dockerConfig, "newfish")).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.pullImages(eq(dockerConfig), any())).thenAnswer(Answers.RETURNS_DEFAULTS);
+            imageUtils.when(() -> ImageUtils.inspectImage(eq(dockerClient), any())).thenReturn(new ImageUtils.ImageInfo());
 
             LifecycleExecutor le = new LifecycleExecutor(config, extendedBuilder, origBuilder, PLATFORM_LEVEL);
             
@@ -572,7 +582,8 @@ public class LifecycleExecutorTest {
             le.execute();
 
             //check that we swapped to the new run image by reading the toml.
-            assertEquals("newfish", runImages.get(0));
+            verify(extendedBuilder).setRunImage(new ImageReference("newfish@sha256:dfa6d55942f1fb88ef93b595fde877e91a4775f58ef61cebe012789f9d93ecbf"));
+            //assertEquals("newfish", runImages.get(0));
 
             //ensure correct phases driven in expected order for this platform revision.
             InOrder order = Mockito.inOrder(detector,analyzer,restorer,buildExtender,runExtender,exporter);

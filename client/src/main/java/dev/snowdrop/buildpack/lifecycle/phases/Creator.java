@@ -26,7 +26,7 @@ public class Creator implements LifecyclePhase{
     @Override
     public ContainerStatus runPhase(dev.snowdrop.buildpack.Logger logger, boolean useTimestamps) {
 
-        LifecycleArgs args = new LifecycleArgs("/cnb/lifecycle/creator", factory.getOutputImage().getReference());
+        LifecycleArgs args = new LifecycleArgs("/cnb/lifecycle/creator", factory.getOutputImage().getReferenceWithLatest());
 
         args.addArg("-uid", "" + factory.getBuilderImage().getUserId());
         args.addArg("-gid", "" + factory.getBuilderImage().getGroupId());
@@ -34,7 +34,7 @@ public class Creator implements LifecyclePhase{
         args.addArg("-app", LifecyclePhaseFactory.WORKSPACE_VOL_PATH + LifecyclePhaseFactory.APP_PATH_PREFIX);
         args.addArg("-layers", LifecyclePhaseFactory.LAYERS_VOL_PATH);
         args.addArg("-platform", LifecyclePhaseFactory.PLATFORM_VOL_PATH);
-        args.addArg("-run-image", factory.getBuilderImage().getRunImages(factory.getPlatformLevel()).get(0));
+        args.addArg("-run-image", factory.getBuilderImage().getRunImages(factory.getPlatformLevel())[0].getReferenceWithLatest());
         args.addArg("-log-level", factory.getLogConfig().getLogLevel());
 
         if(factory.getPlatformLevel().atLeast("0.9") && factory.getDockerConfig().getUseDaemon()){

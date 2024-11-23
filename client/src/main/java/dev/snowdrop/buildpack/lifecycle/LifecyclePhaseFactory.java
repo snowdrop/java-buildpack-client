@@ -96,7 +96,7 @@ public class LifecyclePhaseFactory {
 
         // create a container using builderImage that will invoke the creator process
         String id = ContainerUtils.createContainer(dockerConfig.getDockerClient(), 
-                                                   builder.getImage().getReference(), 
+                                                   builder.getImage().getCanonicalReference(), 
                                                    Arrays.asList(args), 
                                                    runAsId, 
                                                    platformConfig.getEnvironment(), 
@@ -113,7 +113,7 @@ public class LifecyclePhaseFactory {
           log.debug("- mounted " + dockerConfig.getDockerSocket() + " at " + LifecyclePhaseFactory.DOCKER_SOCKET_PATH);
         log.debug("- mounted " + outputVolume + " at " + LAYERS_VOL_PATH);
         log.debug("- container id " + id);
-        log.debug("- image reference "+builder.getImage().getReference()); 
+        log.debug("- image reference "+builder.getImage().getCanonicalReference()); 
         return id;
     }
 
@@ -168,7 +168,7 @@ public class LifecyclePhaseFactory {
         log.info("Adding application to volume "+applicationVolume);
         VolumeUtils.addContentToVolume(dockerConfig.getDockerClient(), 
                                        applicationVolume,
-                                       builder.getImage().getReference(), 
+                                       builder.getImage().getCanonicalReference(), 
                                        LifecyclePhaseFactory.APP_PATH_PREFIX, 
                                        builder.getUserId(), 
                                        builder.getGroupId(), 
@@ -183,7 +183,8 @@ public class LifecyclePhaseFactory {
         //enable experimental features when required.
         if(builder.hasExtensions() && 
            platformLevel.atLeast("0.10") && 
-           !platformConfig.getEnvironment().containsKey("CNB_EXPERIMENTAL_MODE")) {   
+           !platformConfig.getEnvironment().containsKey("CNB_EXPERIMENTAL_MODE")) { 
+           log.info("Builder uses extensions, enabling experimental features.");  
            platformConfig.getEnvironment().put("CNB_EXPERIMENTAL_MODE", "warn");
         }
 
@@ -196,7 +197,7 @@ public class LifecyclePhaseFactory {
         log.info("Adding platform entries to platform volume "+platformVolume);
         VolumeUtils.addContentToVolume(dockerConfig.getDockerClient(), 
                                        platformVolume,
-                                       builder.getImage().getReference(),
+                                       builder.getImage().getCanonicalReference(),
                                        LifecyclePhaseFactory.ENV_PATH_PREFIX, 
                                        builder.getUserId(), 
                                        builder.getGroupId(),
@@ -223,6 +224,16 @@ public class LifecyclePhaseFactory {
         VolumeUtils.removeVolume(dockerConfig.getDockerClient(), platformVolume);
     
         log.info("- temporary build volumes removed");     
+    }
+
+    public void addContentToLayersVolume(StringContent content){
+        VolumeUtils.addContentToVolume(dockerConfig.getDockerClient(), 
+                                       outputVolume, 
+                                       builder.getImage().getCanonicalReference(), 
+                                       "", 
+                                       builder.getUserId(),
+                                       builder.getGroupId(),
+                                       content.getContainerEntries());
     }
 
     public BuilderImage getBuilderImage(){

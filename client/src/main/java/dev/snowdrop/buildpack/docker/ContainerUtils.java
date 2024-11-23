@@ -232,6 +232,7 @@ public class ContainerUtils {
               tae.setGroupId(gid);                            
               tae.setMode(0100000 + ve.getMode()); //0100000 means 'regular file'
               tout.putArchiveEntry(tae);
+              tout.flush();
               DataSupplier cs = ve.getDataSupplier();
               if(cs==null) {
                 throw new IOException("Error DataSupplier was not provided");
@@ -245,6 +246,7 @@ public class ContainerUtils {
                 
               }
               tout.closeArchiveEntry();
+              tout.flush();
             } 
           } catch (Exception e) {
             writerException.set(e);
@@ -252,22 +254,35 @@ public class ContainerUtils {
         } 
         };
 
-      log.debug("Copying archive to container at "+containerPath);
 
+
+      AtomicReference<Exception> readerException = new AtomicReference<>();
       Runnable reader = new Runnable() {
         @Override
         public void run() {
-          CopyArchiveToContainerCmd c = dc.copyArchiveToContainerCmd(containerId)
-                                          .withRemotePath(containerPath)
-                                          .withTarInputStream(in);
-          c.exec();
+          try{
+            CopyArchiveToContainerCmd c = dc.copyArchiveToContainerCmd(containerId)
+                                            .withRemotePath(containerPath)
+                                            .withTarInputStream(in);
+            c.exec();
+          } catch (Exception e) {
+            writerException.set(e);
+          }
         }
       };
 
-      Thread t1 = new Thread(writer);
-      Thread t2 = new Thread(reader);
+      Thread t1 = new Thread(writer,"buildpack-tar-writer-thread");
+      Thread t2 = new Thread(reader, "buildpack-tar-reader-thread");
+
+      log.debug("Copying archive to container at "+containerPath);
 
       t1.start();
+      //add delay to wait for writer a bit.. 
+      try{
+        Thread.sleep(500);
+      }catch(InterruptedException ie){
+        //ignore
+      }
       t2.start();
 
       try {
@@ -281,6 +296,11 @@ public class ContainerUtils {
       Exception wio = writerException.get();
       if (wio != null) {
         throw BuildpackException.launderThrowable(wio);
+      }
+      // did the read thread complete without issues? if not, bubble the cause.
+      Exception rio = readerException.get();
+      if (rio != null) {
+        throw BuildpackException.launderThrowable(rio);
       }
     } catch (IOException e) {
         throw BuildpackException.launderThrowable(e);

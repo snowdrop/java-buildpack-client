@@ -87,7 +87,7 @@ public class BuilderTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));        
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
@@ -165,7 +165,7 @@ public class BuilderTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));

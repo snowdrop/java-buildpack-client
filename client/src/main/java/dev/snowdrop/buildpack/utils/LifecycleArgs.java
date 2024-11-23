@@ -3,16 +3,29 @@ package dev.snowdrop.buildpack.utils;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class LifecycleArgs {
+
+    private static final Logger log = LoggerFactory.getLogger(LifecycleArgs.class);
 
     private final String lifecycle;
     private final List<String> args;
     private final String imageName;
 
     public LifecycleArgs(String lifecycle, String[] args, String finalImageName) {
-        this.lifecycle = lifecycle;
-        
+
         this.args = new ArrayList<>();
+
+        if(System.getenv("DEBUG_LIFECYCLE")!=null || System.getProperty("DEBUG_LIFECYCLE")!=null) {
+            log.info("Lifecycle debug detected, invoking wrapper...");
+            this.lifecycle = "/cnb/lifecycle/debug";
+            this.args.add(lifecycle);
+        }else{
+            this.lifecycle = lifecycle;
+        }
+
         for(String arg: args){
             this.args.add(arg);
         }
@@ -20,8 +33,17 @@ public class LifecycleArgs {
     }
 
     public LifecycleArgs(String lifecycle, String finalImageName) {
-        this.lifecycle = lifecycle;
+
         this.args = new ArrayList<>();
+
+        if(System.getenv("DEBUG_LIFECYCLE")!=null || System.getProperty("DEBUG_LIFECYCLE")!=null) {
+            log.info("Lifecycle debug detected, invoking wrapper...");
+            this.lifecycle = "/cnb/lifecycle/debug";
+            this.args.add(lifecycle);
+        }else{
+            this.lifecycle = lifecycle;
+        }
+
         this.imageName = finalImageName;
     }
 

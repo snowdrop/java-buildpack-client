@@ -7,13 +7,16 @@ import com.github.dockerjava.api.command.WaitContainerResultCallback;
 
 import dev.snowdrop.buildpack.ContainerLogReader;
 import dev.snowdrop.buildpack.docker.ContainerUtils;
+import dev.snowdrop.buildpack.docker.StringContent;
 import dev.snowdrop.buildpack.lifecycle.ContainerStatus;
+
 import dev.snowdrop.buildpack.lifecycle.LifecyclePhase;
+import dev.snowdrop.buildpack.lifecycle.LifecyclePhaseAnalyzedTomlUpdater;
 import dev.snowdrop.buildpack.lifecycle.LifecyclePhaseFactory;
 import dev.snowdrop.buildpack.utils.LifecycleArgs;
 
 
-public class Detector implements LifecyclePhase{
+public class Detector implements LifecyclePhase, LifecyclePhaseAnalyzedTomlUpdater{
 
     private static final Logger log = LoggerFactory.getLogger(Detector.class);
 
@@ -93,6 +96,10 @@ public class Detector implements LifecyclePhase{
 
     public byte[] getAnalyzedToml(){
         return analyzedToml;
+    }
+
+    public void updateAnalyzedToml(String toml){
+        factory.addContentToLayersVolume(new StringContent("analyzed.toml", 0777, toml));
     }
     
 }

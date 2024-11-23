@@ -9,6 +9,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.github.dockerjava.api.DockerClient;
 
+import dev.snowdrop.buildpack.docker.DockerClientUtils.HostAndSocket;
+
 @ExtendWith(MockitoExtension.class)
 public class DockerClientUtilsTest {
 
@@ -16,10 +18,10 @@ public class DockerClientUtilsTest {
   void getDockerHost() {
     String val = System.getenv("DOCKER_HOST");
 
-    String result = DockerClientUtils.getDockerHost();
+    HostAndSocket result = DockerClientUtils.probeContainerRuntime(null);
 
     if (val != null) {
-      assertEquals(val, result);
+      assertEquals(val, result.host);
     }
 
     assertNotNull(result);

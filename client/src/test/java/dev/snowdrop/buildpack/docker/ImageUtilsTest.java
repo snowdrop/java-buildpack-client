@@ -29,6 +29,7 @@ import com.github.dockerjava.api.model.ContainerConfig;
 import com.github.dockerjava.api.model.Image;
 
 import dev.snowdrop.buildpack.config.DockerConfig;
+import dev.snowdrop.buildpack.config.ImageReference;
 import dev.snowdrop.buildpack.docker.ImageUtils.ImageInfo;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +43,8 @@ public class ImageUtilsTest {
       @Mock ContainerConfig cc
       ) {
     
-    String imageName="test";
+    ImageReference test = new ImageReference("test");
+    String imageName = "test:latest";
     
     when(dc.inspectImageCmd(eq(imageName))).thenReturn(iic);
     when(iic.exec()).thenReturn(iir);
@@ -54,7 +56,7 @@ public class ImageUtilsTest {
     labels.put("l1", "v1");
     when(cc.getLabels()).thenReturn(labels);
     
-    ImageInfo ii = ImageUtils.inspectImage(dc, imageName);
+    ImageInfo ii = ImageUtils.inspectImage(dc, test);
     
     assertEquals(ii.id,"id");
     assertArrayEquals(ii.env, new String[] {"one","two"} );
@@ -69,7 +71,8 @@ public class ImageUtilsTest {
       @Mock ListImagesCmd lic,
       @Mock PullImageCmd pic) throws InterruptedException {
     
-    String imageName = "test";
+    ImageReference test = new ImageReference("test");
+    String imageName = "test:latest";
     
     lenient().when(config.getDockerClient()).thenReturn(dc);
     lenient().when(config.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
@@ -78,7 +81,7 @@ public class ImageUtilsTest {
     
     when(dc.pullImageCmd(eq(imageName))).thenReturn(pic);
     
-    ImageUtils.pullImages(config, imageName);
+    ImageUtils.pullImages(config, test);
     
     verify(pic, atLeast(1)).exec(ArgumentMatchers.any());
   }
@@ -90,7 +93,8 @@ public class ImageUtilsTest {
       @Mock Image i,
       @Mock PullImageCmd pic) throws InterruptedException {
     
-    String imageName = "test";
+    ImageReference test = new ImageReference("test:v1");
+    String imageName = "test:v1";
 
     lenient().when(config.getDockerClient()).thenReturn(dc);
     lenient().when(config.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
@@ -101,11 +105,63 @@ public class ImageUtilsTest {
     when(lic.exec()).thenReturn(li);
     when(i.getRepoTags()).thenReturn(new String[] {imageName});
 
-    //when(dc.pullImageCmd(eq(imageName))).thenReturn(pic);
+    //(dc.pullImageCmd(eq(imageName))).thenReturn(pic);
     
-    ImageUtils.pullImages(config, imageName);
+    ImageUtils.pullImages(config, test);
     
-    verify(pic, never()).exec(ArgumentMatchers.any());
+    verify(dc, never()).pullImageCmd(ArgumentMatchers.any());
+  }
+
+  @Test
+  void testPullImageSingleKnownNoTag(@Mock DockerConfig config, 
+      @Mock DockerClient dc,
+      @Mock ListImagesCmd lic,
+      @Mock Image i,
+      @Mock PullImageCmd pic) throws InterruptedException {
+    
+    ImageReference test = new ImageReference("test");
+    String imageName = "test:latest";
+
+    lenient().when(config.getDockerClient()).thenReturn(dc);
+    lenient().when(config.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
+    lenient().when(dc.listImagesCmd()).thenReturn(lic);
+
+    List<Image> li = new ArrayList<Image>();
+    li.add(i);
+    when(lic.exec()).thenReturn(li);
+    when(i.getRepoTags()).thenReturn(new String[] {imageName});
+
+    when(dc.pullImageCmd(eq(imageName))).thenReturn(pic);
+    
+    ImageUtils.pullImages(config, test);
+    
+    verify(pic, atLeast(1)).exec(ArgumentMatchers.any());
+  }
+
+  @Test
+  void testPullImageSingleKnownLatest(@Mock DockerConfig config, 
+      @Mock DockerClient dc,
+      @Mock ListImagesCmd lic,
+      @Mock Image i,
+      @Mock PullImageCmd pic) throws InterruptedException {
+    
+    ImageReference test = new ImageReference("test:latest");
+    String imageName = "test:latest";
+
+    lenient().when(config.getDockerClient()).thenReturn(dc);
+    lenient().when(config.getPullPolicy()).thenReturn(DockerConfig.PullPolicy.IF_NOT_PRESENT);
+    lenient().when(dc.listImagesCmd()).thenReturn(lic);
+
+    List<Image> li = new ArrayList<Image>();
+    li.add(i);
+    when(lic.exec()).thenReturn(li);
+    when(i.getRepoTags()).thenReturn(new String[] {imageName});
+
+    when(dc.pullImageCmd(eq(imageName))).thenReturn(pic);
+    
+    ImageUtils.pullImages(config, test);
+    
+    verify(pic, atLeast(1)).exec(ArgumentMatchers.any());
   }
   
 }

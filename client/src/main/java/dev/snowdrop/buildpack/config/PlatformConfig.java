@@ -18,16 +18,19 @@ public class PlatformConfig {
     private Map<String,String> environment;
     private ImageReference lifecycleImage;
     private Boolean trustBuilder; //use creator when possible.
+    private String phaseDebugScript;
     
     public PlatformConfig( 
                    String platformLevel,
                    ImageReference lifecycleImage,
                    Map<String, String> environment,
-                   Boolean trustBuilder){
+                   Boolean trustBuilder,
+                   String phaseDebugScript){
         this.platformLevel = platformLevel!=null ? platformLevel : DEFAULT_PLATFORM_LEVEL;
         this.environment = environment!=null ? environment : new HashMap<>();
         this.lifecycleImage = lifecycleImage;
         this.trustBuilder = trustBuilder;
+        this.phaseDebugScript = phaseDebugScript;
     }
 
     public String getPlatformLevel(){
@@ -44,6 +47,10 @@ public class PlatformConfig {
 
     public Boolean getTrustBuilder(){
         return trustBuilder;
+    }
+
+    public String getPhaseDebugScript(){
+        return phaseDebugScript;
     }
 
 

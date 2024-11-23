@@ -87,7 +87,7 @@ public class ExporterTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
@@ -108,7 +108,7 @@ public class ExporterTest {
         assertNotNull(args);
         //verify 1st & last elements
         assertEquals("/cnb/lifecycle/exporter", args[0]);
-        assertEquals(args[args.length-1], OUTPUT_IMAGE);
+        assertEquals(new ImageReference(OUTPUT_IMAGE).getReferenceWithLatest(), args[args.length-1]);
 
         List<String> argList = Arrays.asList(args);
         //verify run-image is used for a pre7 run
@@ -169,7 +169,7 @@ public class ExporterTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
@@ -190,7 +190,7 @@ public class ExporterTest {
         assertNotNull(args);
         //verify 1st & last elements
         assertEquals("/cnb/lifecycle/exporter", args[0]);
-        assertEquals(args[args.length-1], OUTPUT_IMAGE);
+        assertEquals(new ImageReference(OUTPUT_IMAGE).getReferenceWithLatest(), args[args.length-1]);
 
         List<String> argList = Arrays.asList(args);
         //verify run-image is not used for a 7 onwards run
@@ -251,7 +251,7 @@ public class ExporterTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
@@ -272,7 +272,7 @@ public class ExporterTest {
         assertNotNull(args);
         //verify 1st & last elements
         assertEquals("/cnb/lifecycle/exporter", args[0]);
-        assertEquals(args[args.length-1], OUTPUT_IMAGE);
+        assertEquals(new ImageReference(OUTPUT_IMAGE).getReferenceWithLatest(), args[args.length-1]);
 
         List<String> argList = Arrays.asList(args);
         //verify run is not used for a 12 run with no run extns
@@ -333,7 +333,7 @@ public class ExporterTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
@@ -354,7 +354,7 @@ public class ExporterTest {
         assertNotNull(args);
         //verify 1st & last elements
         assertEquals("/cnb/lifecycle/exporter", args[0]);
-        assertEquals(args[args.length-1], OUTPUT_IMAGE);
+        assertEquals(new ImageReference(OUTPUT_IMAGE).getReferenceWithLatest(), args[args.length-1]);
 
         List<String> argList = Arrays.asList(args);
         //verify run is not used for a 12 run with no run extns
@@ -416,7 +416,7 @@ public class ExporterTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
@@ -438,7 +438,7 @@ public class ExporterTest {
         assertNotNull(args);
         //verify 1st & last elements
         assertEquals("/cnb/lifecycle/exporter", args[0]);
-        assertEquals(args[args.length-1], OUTPUT_IMAGE);
+        assertEquals(new ImageReference(OUTPUT_IMAGE).getReferenceWithLatest(), args[args.length-1]);
 
         List<String> argList = Arrays.asList(args);
         //verify daemon
@@ -497,7 +497,7 @@ public class ExporterTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
@@ -518,7 +518,7 @@ public class ExporterTest {
         assertNotNull(args);
         //verify 1st & last elements
         assertEquals("/cnb/lifecycle/exporter", args[0]);
-        assertEquals(args[args.length-1], OUTPUT_IMAGE);
+        assertEquals(new ImageReference(OUTPUT_IMAGE).getReferenceWithLatest(), args[args.length-1]);
 
         List<String> argList = Arrays.asList(args);
         //verify dameon

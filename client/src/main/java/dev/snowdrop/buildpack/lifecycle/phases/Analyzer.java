@@ -26,7 +26,7 @@ public class Analyzer implements LifecyclePhase{
     @Override
     public ContainerStatus runPhase(dev.snowdrop.buildpack.Logger logger, boolean useTimestamps) {
 
-        LifecycleArgs args = new LifecycleArgs("/cnb/lifecycle/analyzer", factory.getOutputImage().getReference());
+        LifecycleArgs args = new LifecycleArgs("/cnb/lifecycle/analyzer", factory.getOutputImage().getReferenceWithLatest());
 
         // 0.7 onwards.. removed 
         //                 -cache-dir, Path to cach directory
@@ -47,7 +47,7 @@ public class Analyzer implements LifecyclePhase{
 
         args.addArg("-uid", "" + factory.getBuilderImage().getUserId());
         args.addArg("-gid", "" + factory.getBuilderImage().getGroupId());
-        args.addArg("-run-image", factory.getBuilderImage().getRunImages(factory.getPlatformLevel()).get(0));
+        args.addArg("-run-image", factory.getBuilderImage().getRunImages(factory.getPlatformLevel())[0].getReference());
         args.addArg("-log-level", factory.getLogConfig().getLogLevel());
         args.addArg("-analyzed", LifecyclePhaseFactory.LAYERS_VOL_PATH + "/analyzed.toml");
 

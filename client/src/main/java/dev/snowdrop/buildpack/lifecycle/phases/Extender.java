@@ -28,6 +28,8 @@ public class Extender implements LifecyclePhase{
     @Override
     public ContainerStatus runPhase(dev.snowdrop.buildpack.Logger logger, boolean useTimestamps) {
 
+        //0.12 onwards, must specify -kind of 'build' or 'run'
+
         LifecycleArgs args = new LifecycleArgs("/cnb/lifecycle/extender", null);
 
         args.addArg("-uid", "" + factory.getBuilderImage().getUserId());

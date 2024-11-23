@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
@@ -36,6 +36,8 @@ import com.github.dockerjava.api.command.CreateVolumeCmd;
 import com.github.dockerjava.api.command.InspectVolumeCmd;
 import com.github.dockerjava.api.command.InspectVolumeResponse;
 import com.github.dockerjava.api.command.RemoveVolumeCmd;
+import com.github.dockerjava.api.command.StartContainerCmd;
+import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.exception.NotFoundException;
 
 import dev.snowdrop.buildpack.BuildpackException;
@@ -86,18 +88,24 @@ class VolumeUtilsTest {
 
   @SuppressWarnings("resource")
   @Test
-  void addContentToVolumeViaString(@Mock DockerClient dc ) {
+  void addContentToVolumeViaString(@Mock DockerClient dc, @Mock StartContainerCmd scc, @Mock LogContainerCmd lcc ) {
 
     String volumeName = "fish";
     String entryName = "patent";
     String entryContent = "stilettos";
     String containerId = "wibble";
 
-    try (MockedStatic<ContainerUtils> scu = Mockito.mockStatic(ContainerUtils.class)){
+    try (MockedStatic<ContainerUtils> scu = Mockito.mockStatic(ContainerUtils.class)){//}, withSettings().verboseLogging())){
+        scu.when(() -> ContainerUtils.createContainer(eq(dc), eq("myimage"), ArgumentMatchers.<java.util.List<String>>any(), ArgumentMatchers.<Integer>any(), ArgumentMatchers.<java.util.Map<String,String>>any(), eq(null), ArgumentMatchers.<String>any(), ArgumentMatchers.<VolumeBind>any())).thenReturn(containerId);
 
-        scu.when(() -> ContainerUtils.createContainer(eq(dc), anyString(), anyList(), ArgumentMatchers.<VolumeBind>any())).thenReturn(containerId);
+        when(dc.startContainerCmd(containerId)).thenReturn(scc);
+        when(dc.logContainerCmd(containerId)).thenReturn(lcc);
+        when(lcc.withFollowStream(anyBoolean())).thenReturn(lcc);
+        when(lcc.withStdErr(anyBoolean())).thenReturn(lcc);
+        when(lcc.withStdOut(anyBoolean())).thenReturn(lcc);
+        when(lcc.withTimestamps(anyBoolean())).thenReturn(lcc);
 
-        boolean result = VolumeUtils.addContentToVolume(dc, volumeName, "tianon/true", entryName, 0777, entryContent);
+        boolean result = VolumeUtils.addContentToVolume(dc, volumeName, "myimage", entryName, 0777, entryContent);
         assertTrue(result);
 
         scu.verify(() -> ContainerUtils.addContentToContainer(eq(dc), eq(containerId), anyString(), anyInt(), anyInt(), ArgumentMatchers.<ContainerEntry>argThat(ce -> {
@@ -126,7 +134,9 @@ class VolumeUtilsTest {
                                     @Mock Path p,
                                     @Mock FileSystem fs,
                                     @Mock FileSystemProvider fsp,
-                                    @Mock BasicFileAttributes bfa) {
+                                    @Mock BasicFileAttributes bfa,
+                                    @Mock StartContainerCmd scc,
+                                    @Mock LogContainerCmd lcc) {
 
     String volumeName = "fish";
     String containerId = "wibble";
@@ -152,11 +162,17 @@ class VolumeUtilsTest {
       }
     when(bfa.size()).thenReturn(fileSize);
 
-    try (MockedStatic<ContainerUtils> scu = Mockito.mockStatic(ContainerUtils.class)){
+    try (MockedStatic<ContainerUtils> scu = Mockito.mockStatic(ContainerUtils.class)){//}, withSettings().verboseLogging())){
 
-        scu.when(() -> ContainerUtils.createContainer(eq(dc), anyString(), anyList(), ArgumentMatchers.<VolumeBind>any())).thenReturn(containerId);
+        scu.when(() -> ContainerUtils.createContainer(eq(dc), eq("myimage"), ArgumentMatchers.<java.util.List<String>>any(), ArgumentMatchers.<Integer>any(), ArgumentMatchers.<java.util.Map<String,String>>any(), eq(null), ArgumentMatchers.<String>any(), ArgumentMatchers.<VolumeBind>any())).thenReturn(containerId);
+        when(dc.startContainerCmd(containerId)).thenReturn(scc);
+        when(dc.logContainerCmd(containerId)).thenReturn(lcc);
+        when(lcc.withFollowStream(anyBoolean())).thenReturn(lcc);
+        when(lcc.withStdErr(anyBoolean())).thenReturn(lcc);
+        when(lcc.withStdOut(anyBoolean())).thenReturn(lcc);
+        when(lcc.withTimestamps(anyBoolean())).thenReturn(lcc);        
 
-        boolean result = VolumeUtils.addContentToVolume(dc, volumeName, "tianon/true", pathInVolume, f);
+        boolean result = VolumeUtils.addContentToVolume(dc, volumeName, "myimage", pathInVolume, f);
         assertTrue(result);
 
         scu.verify(() -> ContainerUtils.addContentToContainer(eq(dc), eq(containerId), anyString(), anyInt(), anyInt(), ArgumentMatchers.<ContainerEntry>argThat(ce -> {

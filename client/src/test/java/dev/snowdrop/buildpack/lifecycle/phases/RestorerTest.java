@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.github.dockerjava.api.DockerClient;
@@ -33,6 +35,7 @@ import dev.snowdrop.buildpack.Logger;
 import dev.snowdrop.buildpack.config.DockerConfig;
 import dev.snowdrop.buildpack.config.ImageReference;
 import dev.snowdrop.buildpack.config.LogConfig;
+import dev.snowdrop.buildpack.docker.ContainerUtils;
 import dev.snowdrop.buildpack.lifecycle.ContainerStatus;
 import dev.snowdrop.buildpack.lifecycle.LifecyclePhaseFactory;
 import dev.snowdrop.buildpack.lifecycle.Version;
@@ -89,7 +92,7 @@ public class RestorerTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));        
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(origBuilder.getImage()).thenReturn(new ImageReference("fish"));
@@ -100,13 +103,19 @@ public class RestorerTest {
 
         lenient().when(factory.getOutputImage()).thenReturn(new ImageReference(OUTPUT_IMAGE));
 
-        Restorer r = new Restorer(factory,origBuilder);
+        try (MockedStatic<? extends ContainerUtils> containerUtils = mockStatic(ContainerUtils.class)) {
+            Restorer r = new Restorer(factory,origBuilder);
 
-        ContainerStatus cs = r.runPhase(logger, true);
+            containerUtils.when(() -> ContainerUtils.getFileFromContainer(eq(dockerClient), any(), any())).thenReturn("EmptyTOML".getBytes());
 
-        assertNotNull(cs);
-        assertEquals(CONTAINER_ID, cs.getContainerId());
-        assertEquals(CONTAINER_RC, cs.getRc());
+            ContainerStatus cs = r.runPhase(logger, true);
+
+            assertNotNull(cs);
+            assertEquals(CONTAINER_ID, cs.getContainerId());
+            assertEquals(CONTAINER_RC, cs.getRc());
+
+            assertEquals("EmptyTOML", new String(r.getAnalyzedToml()));
+        }
 
         String[] args = argsCaptor.getValue();
         assertNotNull(args);
@@ -176,7 +185,7 @@ public class RestorerTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));
         lenient().when(builder.hasExtensions()).thenReturn(HAS_EXTENSIONS);
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
@@ -188,13 +197,19 @@ public class RestorerTest {
 
         lenient().when(factory.getOutputImage()).thenReturn(new ImageReference(OUTPUT_IMAGE));
 
-        Restorer r = new Restorer(factory,origBuilder);
+        try (MockedStatic<? extends ContainerUtils> containerUtils = mockStatic(ContainerUtils.class)) {
+            Restorer r = new Restorer(factory,origBuilder);
 
-        ContainerStatus cs = r.runPhase(logger, true);
+            containerUtils.when(() -> ContainerUtils.getFileFromContainer(eq(dockerClient), any(), any())).thenReturn("EmptyTOML".getBytes());
 
-        assertNotNull(cs);
-        assertEquals(CONTAINER_ID, cs.getContainerId());
-        assertEquals(CONTAINER_RC, cs.getRc());
+            ContainerStatus cs = r.runPhase(logger, true);
+
+            assertNotNull(cs);
+            assertEquals(CONTAINER_ID, cs.getContainerId());
+            assertEquals(CONTAINER_RC, cs.getRc());
+
+            assertEquals("EmptyTOML", new String(r.getAnalyzedToml()));
+        }
 
         String[] args = argsCaptor.getValue();
         assertNotNull(args);
@@ -264,7 +279,7 @@ public class RestorerTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));
         lenient().when(builder.hasExtensions()).thenReturn(HAS_EXTENSIONS);
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
@@ -276,13 +291,19 @@ public class RestorerTest {
 
         lenient().when(factory.getOutputImage()).thenReturn(new ImageReference(OUTPUT_IMAGE));
 
-        Restorer r = new Restorer(factory,origBuilder);
+        try (MockedStatic<? extends ContainerUtils> containerUtils = mockStatic(ContainerUtils.class)) {
+            Restorer r = new Restorer(factory,origBuilder);
 
-        ContainerStatus cs = r.runPhase(logger, true);
+            containerUtils.when(() -> ContainerUtils.getFileFromContainer(eq(dockerClient), any(), any())).thenReturn("EmptyTOML".getBytes());
 
-        assertNotNull(cs);
-        assertEquals(CONTAINER_ID, cs.getContainerId());
-        assertEquals(CONTAINER_RC, cs.getRc());
+            ContainerStatus cs = r.runPhase(logger, true);
+
+            assertNotNull(cs);
+            assertEquals(CONTAINER_ID, cs.getContainerId());
+            assertEquals(CONTAINER_RC, cs.getRc());
+
+            assertEquals("EmptyTOML", new String(r.getAnalyzedToml()));
+        }
 
         String[] args = argsCaptor.getValue();
         assertNotNull(args);
