@@ -15,6 +15,7 @@ import dev.snowdrop.buildpack.config.DockerConfig;
 import dev.snowdrop.buildpack.config.ImageReference;
 import dev.snowdrop.buildpack.config.LogConfig;
 import dev.snowdrop.buildpack.config.PlatformConfig;
+import dev.snowdrop.buildpack.config.RegistryAuthConfig;
 import dev.snowdrop.buildpack.docker.ContainerEntry;
 import dev.snowdrop.buildpack.docker.ContainerUtils;
 import dev.snowdrop.buildpack.docker.Content;
@@ -177,8 +178,42 @@ public class LifecyclePhaseFactory {
         //add workarounds to environment.
         if(!platformConfig.getEnvironment().containsKey("CNB_PLATFORM_API")) platformConfig.getEnvironment().put("CNB_PLATFORM_API", platformLevel.toString());
 
-        // This a workaround for a bug in older lifecyle revisions. https://github.com/buildpacks/lifecycle/issues/339        
-        if(!platformConfig.getEnvironment().containsKey("CNB_REGISTRY_AUTH")) platformConfig.getEnvironment().put("CNB_REGISTRY_AUTH", "{}");
+        //warn if the user is trying to set CNB_REGISTRY_AUTH _and_ pass in registry auth objects.
+        if(platformConfig.getEnvironment().containsKey("CNB_REGISTRY_AUTH") && dockerConfig.getAuthConfigs().size()>0){
+            log.warn("Registry auth configs passed while CNB_REGISTRY_AUTH is set, if values do not agree, behavior is undefined");
+        }
+
+   
+        if(!platformConfig.getEnvironment().containsKey("CNB_REGISTRY_AUTH")) {
+            // This default is a workaround for a bug in older lifecyle revisions. https://github.com/buildpacks/lifecycle/issues/339  
+            String registryJson = "{}";
+
+            // if we have auth configs, update registry json with values.
+            if(dockerConfig.getAuthConfigs().size()>0){
+                registryJson = "{ ";
+                for(RegistryAuthConfig rac : dockerConfig.getAuthConfigs()){
+                    //add comma if this isnt our first time round.
+                    if(registryJson.length() > 3){
+                        registryJson += ", ";
+                    }
+                    //figure out appropriate header for different auth creds.
+                    if(rac.getUsername() != null && rac.getPassword() != null){
+                        String b64auth = java.util.Base64.getEncoder().encodeToString((rac.getUsername()+":"+rac.getPassword()).getBytes());
+                        registryJson += " \""+rac.getRegistryAddress()+"\":\"Basic "+b64auth+"\" ";
+                    }else if(rac.getAuth() != null){
+                        registryJson += " \""+rac.getRegistryAddress()+"\":\"Basic "+rac.getAuth()+"\" ";
+                    }else if(rac.getRegistryToken() != null){
+                        registryJson += " \""+rac.getRegistryAddress()+"\":\"Bearer "+rac.getRegistryToken()+"\" ";
+                    }else{
+                        log.warn("Unknown auth type represented by AuthConfig");
+                        throw new IllegalStateException("Unsupported AuthConfig");
+                    }
+                }
+                registryJson+=" } "; 
+            }
+                
+            platformConfig.getEnvironment().put("CNB_REGISTRY_AUTH", registryJson);
+        }
 
         //enable experimental features when required.
         if(builder.hasExtensions() && 

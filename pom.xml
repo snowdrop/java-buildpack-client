@@ -56,7 +56,7 @@
     <java.source>1.8</java.source>
     <java.target>1.8</java.target>
     <!-- Dependency Versions -->
-    <version.docker-java>3.3.4</version.docker-java>
+    <version.docker-java>3.4.2</version.docker-java>
     <version.slf4j>1.7.30</version.slf4j>
     <version.commons-compress>1.20</version.commons-compress>
     <version.jackson>2.12.3</version.jackson>

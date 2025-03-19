@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.snowdrop.buildpack.config.DockerConfig;
+import dev.snowdrop.buildpack.config.ImageReference;
 import dev.snowdrop.buildpack.config.PlatformConfig;
 import dev.snowdrop.buildpack.docker.BuildContainerUtils;
 import dev.snowdrop.buildpack.docker.ImageUtils;
@@ -71,9 +72,11 @@ public class BuildpackBuild {
 
         log.info("Buildpack build requested with config: \n"+
                  " - builder "+config.getBuilderImage().getCanonicalReference()+"\n"+
+                 " - output "+config.getOutputImage().getReference()+"\n"+
                  " - logLevel "+config.getLogConfig().getLogLevel()+"\n"+
                  " - dockerHost "+config.getDockerConfig().getDockerHost()+"\n"+
-                 " - dockerSocket "+config.getDockerConfig().getDockerSocket());
+                 " - dockerSocket "+config.getDockerConfig().getDockerSocket()+"\n"+
+                 " - useDaemon "+config.getDockerConfig().getUseDaemon());
 
         log.info("Pulling Builder image");
 
@@ -88,12 +91,14 @@ public class BuildpackBuild {
                                                          config.getPlatformConfig(),
                                                          builder);
 
-
+        //obtain run image list before extended builder is created.
+        ImageReference runImages[] = builder.getRunImages(new Version(activePlatformLevel));                                                 
+        //pull run images if needed.
         if(config.getDockerConfig().getUseDaemon()) {
             log.info("Pulling Run Image(s) (requesting architecture ["+builder.getImagePlatform()+"])");
 
             //precache the runimages listed in the orig builder before extending it.         
-            ImageUtils.pullImages(config.getDockerConfig(), builder.getImagePlatform(), builder.getRunImages(new Version(activePlatformLevel)));
+            ImageUtils.pullImages(config.getDockerConfig(), builder.getImagePlatform(), runImages);
         }
 
 

@@ -1,19 +1,23 @@
 package dev.snowdrop.buildpack.docker;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
@@ -241,33 +245,37 @@ public class ContainerUtils {
                 if(is==null) {
                   throw new IOException("Error DataSupplier gave null for getData");
                 }
-                
                 copy(is, tout);
-                
               }
               tout.closeArchiveEntry();
               tout.flush();
+              log.trace("add of "+entryPath+" complete");
             } 
           } catch (Exception e) {
+            log.debug("Error during writer thread", e);
             writerException.set(e);
           }
+          log.trace("Writer thread complete");          
         } 
         };
-
-
 
       AtomicReference<Exception> readerException = new AtomicReference<>();
       Runnable reader = new Runnable() {
         @Override
         public void run() {
           try{
+            log.trace("Creating copy command");
             CopyArchiveToContainerCmd c = dc.copyArchiveToContainerCmd(containerId)
                                             .withRemotePath(containerPath)
                                             .withTarInputStream(in);
+            log.trace("Starting copy command");
             c.exec();
+            log.trace("copy command complete");
           } catch (Exception e) {
+            log.trace("Error during consumer thread", e);
             writerException.set(e);
           }
+          log.trace("Consumer thread complete");
         }
       };
 
@@ -276,6 +284,7 @@ public class ContainerUtils {
 
       log.debug("Copying archive to container at "+containerPath);
 
+      log.trace("Launching tar stream creator thread");
       t1.start();
       //add delay to wait for writer a bit.. 
       try{
@@ -283,15 +292,20 @@ public class ContainerUtils {
       }catch(InterruptedException ie){
         //ignore
       }
+      log.trace("Launching tar stream consumer thread");
       t2.start();
 
-      try {
+      log.trace("joining threads");
+      try {        
         t1.join();
+        log.trace("-writer joined");
         t2.join();
+        log.trace("-consumer joined");
       } catch (InterruptedException ie) {
         throw BuildpackException.launderThrowable(ie);
       }
 
+      log.trace("testing for errors");
       // did the write thread complete without issues? if not, bubble the cause.
       Exception wio = writerException.get();
       if (wio != null) {
@@ -302,7 +316,9 @@ public class ContainerUtils {
       if (rio != null) {
         throw BuildpackException.launderThrowable(rio);
       }
+      log.debug("copy contents complete without error.");
     } catch (IOException e) {
+        log.debug("IOException during copy content to container",e);
         throw BuildpackException.launderThrowable(e);
     }
   }

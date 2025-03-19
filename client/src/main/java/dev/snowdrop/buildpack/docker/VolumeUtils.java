@@ -1,9 +1,14 @@
 package dev.snowdrop.buildpack.docker;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 
@@ -68,6 +73,7 @@ public class VolumeUtils {
     return internalAddContentToVolume(dc, volumeName, useImage, prefix, uid, gid, entries.toArray(new ContainerEntry[entries.size()]));
   }
 
+  @SuppressWarnings("resource")
   private static boolean internalAddContentToVolume(DockerClient dc, String volumeName, String useImage, String prefix, int uid, int gid, ContainerEntry... entries) {
 
     LifecycleArgs args = new LifecycleArgs("/cnb/lifecycle/analyzer", null);
@@ -81,16 +87,24 @@ public class VolumeUtils {
     try{
       log.debug("Adding content to volume "+volumeName+" under prefix "+prefix+" using image "+useImage+" with volume bound at "+mountPrefix+" temp container id "+dummyId);
 
-      log.debug("Starting container to ensure volume binds take effect correctly.");
+      log.trace("Starting container to ensure volume binds take effect correctly.");
       dc.startContainerCmd(dummyId).exec();         
 
-      log.debug("- Attaching log relay for volume copy container");
+      log.trace("- Attaching log relay for volume copy container");
 
+      ContainerLogReader slf4j = new ContainerLogReader(new dev.snowdrop.buildpack.Slf4jLogger(VolumeUtils.class));
       ContainerLogReader ignore = new ContainerLogReader(null){
         public void onNext(Frame object) {
           //do-nothing
         }
       };
+      
+      ContainerLogReader logger = null;
+      if(log.isDebugEnabled()){
+        logger = slf4j;
+      }else{
+        logger = ignore;
+      }
 
       // pull the logs, but ignore them.. we're only executing -version on lifecycle.
       dc.logContainerCmd(dummyId)
@@ -98,9 +112,17 @@ public class VolumeUtils {
           .withStdOut(true)
           .withStdErr(true)
           .withTimestamps(true)
-          .exec(ignore); 
+          .exec(logger); 
         
       ContainerUtils.addContentToContainer(dc, dummyId, prefix, uid, gid, entries);
+
+      try{
+        slf4j.close();
+        ignore.close();
+      }catch(Exception e){
+        log.error("Error closing log relay ",e);
+      }
+
       return true;
     }finally{
       if(dummyId!=null){
