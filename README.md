@@ -42,6 +42,7 @@ The [`BuildpackConfig`](client/src/main/java/dev/snowdrop/buildpack/BuildConfig.
     - if Daemon should be used or not. (If yes, docker socket is mounted into build container so buildpack can make use of daemon directly, 
                                         if no, then docker will read/create output images with remote registry directly. Note that daemon is 
                                         still used to run the various build containers, just that the containers do not themselves have access to the daemon.)
+    - per registry authentication information. (see registry authentication section below)
 - caches (launch/build/kaniko) can be configured with.. 
     - cache volume name. (if omitted, a randomly generated name is used)
     - cache delete after build. (if yes, cache volume will be removed after build exits, defaults to TRUE)
@@ -64,9 +65,7 @@ passed, allowing for sparse source directories, or multiple project dirs to be c
 
 Build/RunImages will be pulled as required. 
 
-The builder will use docker via the `DOCKER_HOST` env var, if configured, or via the platform appropriate docker socket if not.
-Alternatively, dockerHost can be directly configured on the builder itself. If the docker host starts with `unix://` the path to the
-docker socket is extracted and used during the build phase. If unset, this defaults to `/var/run/docker/sock`
+The builder will use docker via the `DOCKER_HOST` env var, if configured. If `DOCKER_HOST` is not set, the builder will check if `podman` is on the path, and if so, will use it to configure the `DOCKER_HOST` value, and to locate the correct path to use if mounting the socket into the containers (`.withUseDaemon(true)` mode, the default). If `podman` is not on the path, docker is assumed, and `unix:///var/run/docker.sock` is used as a default.
 
 ## How To:
 
@@ -212,7 +211,90 @@ int exitCode = BuildConfig.builder()
 
 If the build fails for any reason, a `BuildpackException` will be thrown, this is a RuntimeException, so does not need an explicit catch block. There are many ways in which a build can fail, from something environmental, like docker being unavailable, to build related issues, like the chosen builder image requiring a platformlevel not implemented by this library. 
 
-## Using the buildpack client 
+## Registry Authentication
+
+The client supports per registry authentication, which can be configured by supplying RegistryAuthConfig instances to the the DockerConfig. 
+
+Eg. 
+
+```java
+
+    List<RegistryAuthConfig> authInfo = new ArrayList<>();
+
+    RegistryAuthConfig authConfig = RegistryAuthConfig.builder()
+                                            .withRegistryAddress("quay.io")
+                                            .withUsername("username")
+                                            .withPassword("password")
+                                            .build();
+
+    authInfo.add(authConfig);
+
+```
+
+and then setting the list of auth configs into the docker config on the builder using
+
+```java
+
+exitCode = BuildConfig.builder()
+                           .withBuilderImage(new ImageReference(builderImage))
+                           .withOutputImage(new ImageReference("quay.io/myexamplerepo/myexampleimage:exampletag"))
+                           .withNewDockerConfig()
+                              .withAuthConfigs(authInfo)
+                              .withUseDaemon(false)
+                           .and()
+                           .addNewFileContentApplication(new File("/home/user/java-project"))
+                           .build()
+                           .getExitCode();
+```
+
+The client will use this information when talking to the local daemon to pull images, and will use it to build a CNB_REGISTRY_AUTH variable to enable the lifecycle to talk to registries too. This is most useful when using the `.withUseDaemon(false)` option, as the lifecycle will need to be able to pull and push layers to the appropriate registries. 
+
+When encoding CNB_REGISTRY_AUTH, the client supports username/password, auth (pre-encoded username/password value), and registrytoken (passed as bearer token header). If your registry requires a more complex header, setting CNB_REGISTRY_AUTH into the platform environment will disable the client generation of the value from the passed authconfig objects. 
+
+Note: if you pass CNB_REGISTRY_AUTH via platform env _and_ pass authconfigs, it is up to the caller to ensure the values result in the required behavior. 
+
+- CNB_REGISTRY_AUTH is used by the lifecycle phases running in the containers to talk to registries. 
+- RegistryAuthConfigs are used by the client to talk to the daemon, and pull images from registries. 
+
+
+## Invoking the buildpack client 
+
+### Jbang
+
+The easiest way to invoke arbitrary java code, without much hassle is by using [jbang](https://www.jbang.dev/).
+
+So, you can drop the following file in your project: (swap XXX for latest release of buildpack-client)
+
+```java
+///usr/bin/env jbang "$0" "$@" ; exit $?
+
+//DEPS dev.snowdrop:buildpack-client:0.0.12}
+import static java.lang.System.*;
+
+import java.io.File;
+import dev.snowdrop.buildpack.*;
+
+public class pack {
+
+    public static void main(String... args) {
+        int exitCode = BuildConfig.builder()
+                                .withOutputImage(new ImageReference("test/testimage:latest"))
+                                .addNewFileContentApplication(new File("/home/user/java-project"))
+                                .build()
+                                .getExitCode();
+        System.exit(exitCode);
+    }
+}
+
+```
+
+... and just run it using:
+
+```
+./pack.java
+```
+
+The samples use jbang too, but allow the version of the library to be set via an env var for use in our tests! [samples](./samples).
 
 ### Maven exec:java
 
@@ -252,58 +334,20 @@ export CNB_LOG_LEVEL=debug
 etc
 ```
 
-### Jbang
-
-The easiest way to invoke arbitrary java code, without much hassle is by using [jbang](https://www.jbang.dev/).
-
-So, you can drop the following file in your project: (swap XXX for latest release of buildpack-client)
-
-```java
-///usr/bin/env jbang "$0" "$@" ; exit $?
-
-//DEPS dev.snowdrop:buildpack-client:0.0.12}
-import static java.lang.System.*;
-
-import java.io.File;
-import dev.snowdrop.buildpack.*;
-
-public class pack {
-
-    public static void main(String... args) {
-        int exitCode = BuildConfig.builder()
-                                .withOutputImage(new ImageReference("test/testimage:latest"))
-                                .addNewFileContentApplication(new File("/home/user/java-project"))
-                                .build()
-                                .getExitCode();
-        System.exit(exitCode);
-    }
-}
-
-```
-
-... and just run it using:
-
-```
-./pack.java
-```
-
-The samples use jbang too, but allow the version of the library to be set via an env var for use in our tests! [samples](./samples).
-
 ## FAQ:
 
-**Will this work with Podman?:**
+**Will this work with podman?**
 
-Yes, tested with Podman 4.7.0 on Fedora, rootless and rootful. 
+Yes, tested against podman 4 and 5, in rootless and rootful modes, on macos and linux. 
 
 **Does this work on Windows?:**
 
-Yes.. it's supposed to! 
+Yes.. it's supposed to! (although the automated test suite on github is unable to run as the runners don't support nested virtualization)
 Tested with Win10 + Docker on WSL2
 
 **Does this work on Linux?:**
 
-Yes.. 
-Tested with Ubuntu & Fedora with Docker
+Yes.. Developed and tested on Fedora, and tested via Github runners on Ubuntu with podman 4/5, and docker.
 
 **Can I supply buildpacks/extensions to add to a builder like pack?:**
 
