@@ -316,7 +316,7 @@ public class ContainerUtils {
       if (rio != null) {
         throw BuildpackException.launderThrowable(rio);
       }
-      log.debug("copy contents complete without error.");
+      log.trace("copy contents complete without error.");
     } catch (IOException e) {
         log.debug("IOException during copy content to container",e);
         throw BuildpackException.launderThrowable(e);
