@@ -1,0 +1,244 @@
+name: Registry Runner 
+
+on: 
+  workflow_dispatch:
+
+# TODO:
+#   Verify built image is able to run.. 
+#   Add test projects for java 8 and java 11 (older spring/quarkus levels needed)  
+
+jobs:
+  integration-tests:
+
+    strategy:
+      # Each test is a different scenario, do not cancel running tests if one fails.
+      fail-fast: false
+      matrix:
+        # Define projects to test, don't use generated matrix, as will need projects appropriate for each jvm to test
+        projects: [
+           { project: "hello-spring",  java: "17", label: "M-P5-RL-J17-S", runner: "macos-13",       runtime: "podman5", root: "rootless" },
+           { project: "hello-spring",  java: "17", label: "U-P5-RL-J17-S", runner: "ubuntu-24.04",   runtime: "podman5", root: "rootless" },
+           { project: "hello-spring",  java: "17", label: "U-P4-RL-J17-S", runner: "ubuntu-24.04",   runtime: "podman4", root: "rootless" },
+           { project: "hello-spring",  java: "17", label: "M-P5-RF-J17-S", runner: "macos-13",       runtime: "podman5", root: "rootful" },
+           { project: "hello-spring",  java: "17", label: "U-P5-RF-J17-S", runner: "ubuntu-24.04",   runtime: "podman5", root: "rootful" },
+           { project: "hello-spring",  java: "17", label: "U-P4-RF-J17-S", runner: "ubuntu-24.04",   runtime: "podman4", root: "rootful" },
+           { project: "hello-spring",  java: "17", label: "U-D-RL-J17-S",  runner: "ubuntu-24.04",   runtime: "docker" },
+           { project: "hello-spring",  java: "17", label: "W-D-RL-J17-S",  runner: "windows-latest", runtime: "docker" },
+           { project: "hello-quarkus", java: "17", label: "M-P5-RL-J17-Q", runner: "macos-13",       runtime: "podman5", root: "rootless" },
+           { project: "hello-quarkus", java: "17", label: "U-P5-RL-J17-Q", runner: "ubuntu-24.04",   runtime: "podman5", root: "rootless" },
+           { project: "hello-quarkus", java: "17", label: "U-P4-RL-J17-Q", runner: "ubuntu-24.04",   runtime: "podman4", root: "rootless" },
+           { project: "hello-quarkus", java: "17", label: "M-P5-RF-J17-Q", runner: "macos-13",       runtime: "podman5", root: "rootful" },
+           { project: "hello-quarkus", java: "17", label: "U-P5-RF-J17-Q", runner: "ubuntu-24.04",   runtime: "podman5", root: "rootful" },
+           { project: "hello-quarkus", java: "17", label: "U-P4-RF-J17-Q", runner: "ubuntu-24.04",   runtime: "podman4", root: "rootful" },
+           { project: "hello-quarkus", java: "17", label: "U-D-RL-J17-Q",  runner: "ubuntu-24.04",   runtime: "docker" },
+           { project: "hello-spring",  java: "17", label: "W-D-RL-J17-Q",  runner: "windows-latest", runtime: "docker" },
+           { project: "hello-spring",  java: "21", label: "M-P5-RL-J21-S", runner: "macos-13",       runtime: "podman5", root: "rootless" },
+           { project: "hello-spring",  java: "21", label: "U-P5-RL-J21-S", runner: "ubuntu-24.04",   runtime: "podman5", root: "rootless" },
+           { project: "hello-spring",  java: "21", label: "U-P4-RL-J21-S", runner: "ubuntu-24.04",   runtime: "podman4", root: "rootless" },
+           { project: "hello-spring",  java: "21", label: "M-P5-RF-J21-S", runner: "macos-13",       runtime: "podman5", root: "rootful" },
+           { project: "hello-spring",  java: "21", label: "U-P5-RF-J21-S", runner: "ubuntu-24.04",   runtime: "podman5", root: "rootful" },
+           { project: "hello-spring",  java: "21", label: "U-P4-RF-J21-S", runner: "ubuntu-24.04",   runtime: "podman4", root: "rootful" },
+           { project: "hello-spring",  java: "21", label: "U-D-RL-J21-S",  runner: "ubuntu-24.04",   runtime: "docker" },
+           { project: "hello-spring",  java: "21", label: "W-D-RL-J21-S",  runner: "windows-latest", runtime: "docker" },
+           { project: "hello-quarkus", java: "21", label: "M-P5-RL-J21-Q", runner: "macos-13",       runtime: "podman5", root: "rootless" },
+           { project: "hello-quarkus", java: "21", label: "U-P5-RL-J21-Q", runner: "ubuntu-24.04",   runtime: "podman5", root: "rootless" },
+           { project: "hello-quarkus", java: "21", label: "U-P4-RL-J21-Q", runner: "ubuntu-24.04",   runtime: "podman4", root: "rootless" },
+           { project: "hello-quarkus", java: "21", label: "M-P5-RF-J21-Q", runner: "macos-13",       runtime: "podman5", root: "rootful" },
+           { project: "hello-quarkus", java: "21", label: "U-P5-RF-J21-Q", runner: "ubuntu-24.04",   runtime: "podman5", root: "rootful" },
+           { project: "hello-quarkus", java: "21", label: "U-P4-RF-J21-Q", runner: "ubuntu-24.04",   runtime: "podman4", root: "rootful" },
+           { project: "hello-quarkus", java: "21", label: "U-D-RL-J21-Q",  runner: "ubuntu-24.04",   runtime: "docker" },
+           { project: "hello-spring",  java: "21", label: "W-D-RL-J21-Q",  runner: "windows-latest", runtime: "docker" }
+        ]
+
+    runs-on: [ "${{ matrix.projects.runner }}" ]
+    # Keep name short, as github ui does not allow many characters to be displayed
+    name: ${{ matrix.projects.label }}
+
+    steps:
+
+      # Maybe no longer required now lib doesn't attempt to download the planet when getting tagless images.
+      - name: Freee Disk Space for Ubuntu
+        if: matrix.projects.runner == 'ubuntu-24.04'
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      # Install and configure podman for mac
+      - name: Podman5 Mac
+        if: matrix.projects.runner == 'macos-13' && matrix.projects.runtime == 'podman5'
+        run: |
+          echo "Installing Podman for Mac"
+          cd /tmp
+          wget -nv "https://github.com/containers/podman/releases/download/v5.3.1/podman-installer-macos-universal.pkg"
+          sudo installer -pkg /tmp/podman-installer-macos-universal.pkg -target /
+          export PATH=$PATH:/opt/podman/bin
+
+          # Add Podman to path for future steps.
+          echo "/opt/podman/bin" >> $GITHUB_PATH
+
+          # launch podman
+          podman machine init
+          podman machine start
+
+          # reconfigure timeouts inside podman vm to be compatible with java docker api
+          echo 'mkdir -p /etc/containers/containers.conf.d && printf "[engine]\nservice_timeout=91\n" > /etc/containers/containers.conf.d/service-timeout.conf && systemctl restart podman.socket' |  podman machine ssh --username root --
+      
+      # Configure podman for ubuntu
+      - name: Podman4 Ubuntu
+        if: matrix.projects.runner == 'ubuntu-24.04' && matrix.projects.runtime == 'podman4'
+        run: |
+          echo "Configuring Podman 4 for ubuntu" 
+
+          # reconfigure timeouts for podman to be compatible with java docker api
+          sudo mkdir -p /etc/containers/containers.conf.d
+          printf "[engine]\nservice_timeout=91\n" | sudo tee -a /etc/containers/containers.conf.d/service-timeout.conf
+
+          # start the podman user socket
+          systemctl --user start podman.socket
+
+      - name: Set up Homebrew
+        if: matrix.projects.runner == 'ubuntu-24.04' && matrix.projects.runtime == 'podman5'
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Podman5 Ubuntu
+        if: matrix.projects.runner == 'ubuntu-24.04' && matrix.projects.runtime == 'podman5'
+        run: |
+          echo "Configuring Podman 5 for ubuntu" 
+
+          # Remove the old crun executable to let brew to install a newer one ...
+          sudo apt-get remove crun
+          
+          # Use brew to install podman 5
+          brew install podman
+          brew services start podman
+          
+          # reconfigure timeouts for podman to be compatible with java docker api
+          sudo mkdir -p /etc/containers/containers.conf.d
+          printf "[engine]\nservice_timeout=91\n" | sudo tee -a /etc/containers/containers.conf.d/service-timeout.conf
+
+          # restart to allow config to take effect
+          brew services restart podman
+
+      - name: Podman Rootful (podman machine)
+        if: (matrix.projects.runner == 'macos-13' || matrix.projects.runner == 'windows-latest') && (matrix.projects.runtime == 'podman5' || matrix.projects.runtime == 'podman4') && matrix.projects.root == 'rootful'
+        run: |
+          podman system connection ls
+          podman machine stop
+          podman machine set --rootful=true
+          podman machine start
+          podman system connection ls
+
+      - name: Podman Rootful (native)
+        if: matrix.projects.runner == 'ubuntu-24.04' && (matrix.projects.runtime == 'podman5' || matrix.projects.runtime == 'podman4') && matrix.projects.root == 'rootful'
+        run: |
+          podman system connection ls
+          systemctl disable --now --user podman.socket
+          sudo systemctl enable --now podman.socket
+          echo "as a user"
+          podman info --format '{{.Host.RemoteSocket.Path}}'
+          echo "as root"
+          sudo podman info --format '{{.Host.RemoteSocket.Path}}'
+          export DOCKER_HOST=unix:///run/podman/podman.sock
+          echo "DOCKER_HOST=unix:///run/podman/podman.sock" >> $GITHUB_ENV
+          sudo ls -al /run/podman | grep podman.sock
+          sudo chmod 777 -R /run/podman
+          sudo ls -al /run/podman | grep podman.sock
+          
+      - name: Docker Ubuntu
+        if: matrix.projects.runner == 'ubuntu-24.04' && matrix.projects.runtime == 'docker'
+        run: |
+          echo "Configuring Docker for ubuntu" 
+
+          # Remove the podman, to allow library autodetect to find docker
+          sudo apt-get remove podman
+          
+      # Dump info about podman in case we need to report errors
+      - name: Podman info
+        if: matrix.projects.runtime == 'podman4' || matrix.projects.runtime == 'podman5'
+        run: |
+          echo "Podman information"
+          podman info
+
+      - name: Docker info
+        if: matrix.projects.runtime == 'docker'
+        run: |
+          echo "Docker information"
+          docker info
+
+      # Install appropriate level jdk
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.projects.java }}
+          distribution: 'adopt'
+
+      # Install jbang (required to run tests)
+      - name: Setup jbang (unix)
+        if: matrix.projects.runner == 'macos-13' || matrix.projects.runner == 'ubuntu-24.04'
+        run: |
+          curl -Ls "https://sh.jbang.dev" | bash -s - app setup
+
+          # Add jbang to the path for future steps.
+          echo "$HOME/.jbang/bin" >> $GITHUB_PATH
+
+      - name: Setup jbang (win)
+        if: matrix.projects.runner == 'windows-latest'
+        run: |
+          iex "& { $(iwr -useb https://ps.jbang.dev) } app setup"
+
+          # Add jbang to the path for future steps.
+          echo "$HOME\.jbang\bin" >> $GITHUB_PATH        
+          
+      # Checkout the project
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build library
+        run: |
+          ./mvnw compile
+          ./mvnw package
+          ./mvnw install        
+
+      - name: Build test project (win)
+        if: matrix.projects.runner == 'windows-latest'
+        run: |
+          echo "Setting up to build ${{ matrix.projects.project }} with ${{ matrix.projects.java-buildpack-lib-jitpack}} on ${{ matrix.projects.runner }}"
+          POMVER=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          export CURRENT_WORKFLOW_DEP=dev.snowdrop:java-buildpack-client:${POMVER}
+          $env:PROJECT_PATH="${{ matrix.projects.project }}"
+          $env:JDK="${{ matrix.projects.java }}"
+
+          echo "Setting up JBang command"
+          $jbang = ([scriptblock]::Create($(iwr -useb https://ps.jbang.dev)))
+
+          echo "Launching JBang"
+          cd test-projects
+          $jrc=& $jbang run RunRegistryTest.java | select -Last 1
+          
+          echo "After jbang result: $jrc"
+          exit $jrc
+          
+      # Build the matrix specificied project with the options configured.
+      - name: Build test project (unix)
+        if: matrix.projects.runner == 'macos-13' || matrix.projects.runner == 'ubuntu-24.04'
+        run: |
+          echo Setting up to build ${{ matrix.projects.project }} with ${{ matrix.projects.java-buildpack-lib-jitpack}} on ${{ matrix.projects.runner }}
+          POMVER=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          export CURRENT_WORKFLOW_DEP=dev.snowdrop:java-buildpack-client:${POMVER}
+          export PROJECT_PATH=/samples/testcases/${{ matrix.projects.project }}
+          export JDK=${{ matrix.projects.java }}
+
+          export REGISTRY_ADDRESS=quay.io
+          export REGISTRY_USER=${{ secrets.QUAY_USER }}
+          export REGISTRY_PASS=${{ secrets.QUAY_TOKEN }}
+
+          export OUTPUT_IMAGE=quay.io/ozzydweller/snowdropbuildtests:registry.${{ matrix.projects.label }}
+
+          chmod +x /samples/testcases/RunRegistryTest.java
+          /samples/testcases/RunRegistryTest.java
