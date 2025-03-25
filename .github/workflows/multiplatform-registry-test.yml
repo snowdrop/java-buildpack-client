@@ -243,5 +243,5 @@ jobs:
 
           export OUTPUT_IMAGE=quay.io/ozzydweller/snowdropbuildtests:registry.${{ matrix.projects.label }}
 
-          chmod +x /samples/testcases/RunRegistryTest.java
+          chmod +x ./samples/testcases/RunRegistryTest.java
           ./samples/testcases/RunRegistryTest.java
