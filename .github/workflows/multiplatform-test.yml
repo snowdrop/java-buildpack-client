@@ -211,10 +211,12 @@ jobs:
         run: |
           echo "Setting up to build ${{ matrix.projects.project }} with ${{ matrix.projects.java-buildpack-lib-jitpack}} on ${{ matrix.projects.runner }}"
 
-          $env:POMVER=(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          $env:POMVER=(mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
           $env:CURRENT_WORKFLOW_DEP="dev.snowdrop:buildpack-client:$env:POMVER"
           $env:PROJECT_PATH="${{ matrix.projects.project }}"
           $env:JDK="${{ matrix.projects.java }}"
+
+          echo "Configured to test $env:CURRENT_WORKFLOW_DEP"
 
           echo "Setting up JBang command"
           $jbang = ([scriptblock]::Create($(iwr -useb https://ps.jbang.dev)))
