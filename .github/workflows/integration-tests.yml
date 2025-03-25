@@ -50,7 +50,6 @@ jobs:
           swap-storage: false
 
       - name: Docker Ubuntu
-        if: matrix.projects.runner == 'ubuntu-24.04' && matrix.projects.runtime == 'docker'
         run: |
           echo "Configuring Docker for ubuntu" 
 
