@@ -220,7 +220,7 @@ jobs:
           $jbang = ([scriptblock]::Create($(iwr -useb https://ps.jbang.dev)))
 
           echo "Launching JBang"
-          cd test-projects
+          cd samples\testcases
           $jrc=& $jbang run RunRegistryTest.java | select -Last 1
           
           echo "After jbang result: $jrc"
