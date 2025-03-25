@@ -210,8 +210,9 @@ jobs:
         if: matrix.projects.runner == 'windows-latest'
         run: |
           echo "Setting up to build ${{ matrix.projects.project }} with ${{ matrix.projects.java-buildpack-lib-jitpack}} on ${{ matrix.projects.runner }}"
-          POMVER=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
-          export CURRENT_WORKFLOW_DEP=dev.snowdrop:java-buildpack-client:${POMVER}
+          
+          $env:POMVER=(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          $env:CURRENT_WORKFLOW_DEP=dev.snowdrop:java-buildpack-client:${POMVER}
           $env:PROJECT_PATH="${{ matrix.projects.project }}"
           $env:JDK="${{ matrix.projects.java }}"
 
