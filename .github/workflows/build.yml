@@ -30,20 +30,18 @@ jobs:
     strategy:
       matrix:
         java: [8, 11, 17]
+        
     steps:
       - name: Checkout
-        uses: actions/checkout@v2.3.4
-      - name: Cache .m2 registry
-        uses: actions/cache@v2.1.5
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{ github.sha }}
-          restore-keys: ${{ runner.os }}-maven-
+        uses: actions/checkout@v4
+        
       - name: Setup Java
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java }}
           distribution: 'adopt'
+          cache: maven
+          
       - name: Build Project
         run: mvn ${MAVEN_ARGS} clean install
         
