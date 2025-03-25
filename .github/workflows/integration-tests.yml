@@ -48,6 +48,14 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: false
+
+      - name: Docker Ubuntu
+        if: matrix.projects.runner == 'ubuntu-24.04' && matrix.projects.runtime == 'docker'
+        run: |
+          echo "Configuring Docker for ubuntu" 
+
+          # Remove the podman, to allow library autodetect to find docker
+          sudo apt-get remove podman          
           
       - name: Checkout
         uses: actions/checkout@v4
