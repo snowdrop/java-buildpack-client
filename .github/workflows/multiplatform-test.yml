@@ -177,6 +177,7 @@ jobs:
         with:
           java-version: ${{ matrix.projects.java }}
           distribution: 'adopt'
+          cache: maven
 
       # Install jbang (required to run tests)
       - name: Setup jbang (unix)
@@ -201,9 +202,9 @@ jobs:
 
       - name: Build library
         run: |
-          ./mvnw compile -DskipTests --no-transfer-progress
-          ./mvnw package -DskipTests --no-transfer-progress
-          ./mvnw install -DskipTests --no-transfer-progress
+          ./mvnw compile -DskipTests --no-transfer-progress --update-snapshots
+          ./mvnw package -DskipTests --no-transfer-progress --update-snapshots
+          ./mvnw install -DskipTests --no-transfer-progress --update-snapshots
 
       - name: Build test project (win)
         if: matrix.projects.runner == 'windows-latest'
