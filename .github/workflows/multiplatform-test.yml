@@ -203,17 +203,16 @@ jobs:
       - name: Build library
         run: |
           ./mvnw compile -DskipTests --no-transfer-progress --update-snapshots
-          ./mvnw package -DskipTests --no-transfer-progress --update-snapshots
+          ./mvnw package -DskipTests --no-transfer-progress --update-snapshots 
+          ./mvnw install -DskipTests --no-transfer-progress --update-snapshots
 
       - name: Build test project (win)
         if: matrix.projects.runner == 'windows-latest'
         run: |
           echo "Setting up to build ${{ matrix.projects.project }} with ${{ matrix.projects.java-buildpack-lib-jitpack}} on ${{ matrix.projects.runner }}"
 
-          ./mvnw install -DskipTests --no-transfer-progress --update-snapshots
-          
           $env:POMVER=(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
-          export CURRENT_WORKFLOW_DEP=dev.snowdrop:java-buildpack-client:${POMVER}
+          $env:CURRENT_WORKFLOW_DEP="dev.snowdrop:buildpack-client:$env:POMVER"
           $env:PROJECT_PATH="${{ matrix.projects.project }}"
           $env:JDK="${{ matrix.projects.java }}"
 
@@ -232,8 +231,6 @@ jobs:
         if: matrix.projects.runner == 'macos-13' || matrix.projects.runner == 'ubuntu-24.04'
         run: |
           echo Setting up to build ${{ matrix.projects.project }} with ${{ matrix.projects.java-buildpack-lib-jitpack}} on ${{ matrix.projects.runner }}
-
-          ./mvnw install -DskipTests --no-transfer-progress --update-snapshots
           
           POMVER=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
           export CURRENT_WORKFLOW_DEP=dev.snowdrop:buildpack-client:${POMVER}
