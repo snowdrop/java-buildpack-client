@@ -171,12 +171,17 @@ jobs:
           echo "Docker information"
           docker info
 
+      # Checkout the project
+      - name: Checkout
+        uses: actions/checkout@v4
+
       # Install appropriate level jdk
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.projects.java }}
           distribution: 'adopt'
+          cache: maven
 
       # Install jbang (required to run tests)
       - name: Setup jbang (unix)
@@ -193,24 +198,21 @@ jobs:
           iex "& { $(iwr -useb https://ps.jbang.dev) } app setup"
 
           # Add jbang to the path for future steps.
-          echo "$HOME\.jbang\bin" >> $GITHUB_PATH        
-          
-      # Checkout the project
-      - name: Checkout
-        uses: actions/checkout@v4
+          echo "$HOME\.jbang\bin" >> $GITHUB_PATH
 
       - name: Build library
         run: |
-          ./mvnw compile
-          ./mvnw package
-          ./mvnw install        
+          ./mvnw compile -DskipTests --no-transfer-progress --update-snapshots
+          ./mvnw package -DskipTests --no-transfer-progress --update-snapshots
+          ./mvnw install -DskipTests --no-transfer-progress --update-snapshots        
 
       - name: Build test project (win)
         if: matrix.projects.runner == 'windows-latest'
         run: |
           echo "Setting up to build ${{ matrix.projects.project }} with ${{ matrix.projects.java-buildpack-lib-jitpack}} on ${{ matrix.projects.runner }}"
-          POMVER=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
-          export CURRENT_WORKFLOW_DEP=dev.snowdrop:java-buildpack-client:${POMVER}
+          
+          $env:POMVER=(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          $env:CURRENT_WORKFLOW_DEP="dev.snowdrop:buildpack-client:$env:POMVER"
           $env:PROJECT_PATH="${{ matrix.projects.project }}"
           $env:JDK="${{ matrix.projects.java }}"
 
@@ -229,9 +231,10 @@ jobs:
         if: matrix.projects.runner == 'macos-13' || matrix.projects.runner == 'ubuntu-24.04'
         run: |
           echo Setting up to build ${{ matrix.projects.project }} with ${{ matrix.projects.java-buildpack-lib-jitpack}} on ${{ matrix.projects.runner }}
+          
           POMVER=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
-          export CURRENT_WORKFLOW_DEP=dev.snowdrop:java-buildpack-client:${POMVER}
-          export PROJECT_PATH=/samples/testcases/${{ matrix.projects.project }}
+          export CURRENT_WORKFLOW_DEP=dev.snowdrop:buildpack-client:${POMVER}
+          export PROJECT_PATH=./samples/testcases/${{ matrix.projects.project }}
           export JDK=${{ matrix.projects.java }}
 
           export REGISTRY_ADDRESS=quay.io
