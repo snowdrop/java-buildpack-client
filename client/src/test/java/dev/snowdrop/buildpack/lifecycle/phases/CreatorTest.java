@@ -87,7 +87,7 @@ public class CreatorTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));        
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
@@ -108,7 +108,7 @@ public class CreatorTest {
         assertNotNull(args);
         //verify 1st & last elements
         assertEquals("/cnb/lifecycle/creator", args[0]);
-        assertEquals(args[args.length-1], OUTPUT_IMAGE);
+        assertEquals(new ImageReference(OUTPUT_IMAGE).getReferenceWithLatest(), args[args.length-1]);        
 
         List<String> argList = Arrays.asList(args);
         //verify no launch cache for a pre7 run
@@ -169,7 +169,7 @@ public class CreatorTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
@@ -190,7 +190,7 @@ public class CreatorTest {
         assertNotNull(args);
         //verify 1st & last elements
         assertEquals("/cnb/lifecycle/creator", args[0]);
-        assertEquals(args[args.length-1], OUTPUT_IMAGE);
+        assertEquals(new ImageReference(OUTPUT_IMAGE).getReferenceWithLatest(), args[args.length-1]);        
 
         List<String> argList = Arrays.asList(args);
         //verify launch cache for a 9 onwards run 
@@ -252,7 +252,7 @@ public class CreatorTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));        
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
@@ -273,7 +273,7 @@ public class CreatorTest {
         assertNotNull(args);
         //verify 1st & last elements
         assertEquals("/cnb/lifecycle/creator", args[0]);
-        assertEquals(args[args.length-1], OUTPUT_IMAGE);
+        assertEquals(new ImageReference(OUTPUT_IMAGE).getReferenceWithLatest(), args[args.length-1]);        
 
         List<String> argList = Arrays.asList(args);
         //verify launch cache for a 9 onwards run 
@@ -335,7 +335,7 @@ public class CreatorTest {
 
         lenient().when(builder.getUserId()).thenReturn(USER_ID);
         lenient().when(builder.getGroupId()).thenReturn(GROUP_ID);
-        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of("runImage1", "runImage2").collect(Collectors.toList()));
+        lenient().when(builder.getRunImages(any())).thenReturn(Stream.of(new ImageReference("runimage1"), new ImageReference("runimage2")).collect(Collectors.toList()).toArray(new ImageReference[]{}));
         lenient().when(factory.getBuilderImage()).thenReturn(builder);
 
         lenient().when(factory.getPlatformLevel()).thenReturn(new Version(PLATFORM_LEVEL));
@@ -356,7 +356,7 @@ public class CreatorTest {
         assertNotNull(args);
         //verify 1st & last elements
         assertEquals("/cnb/lifecycle/creator", args[0]);
-        assertEquals(args[args.length-1], OUTPUT_IMAGE);
+        assertEquals(new ImageReference(OUTPUT_IMAGE).getReferenceWithLatest(), args[args.length-1]);
 
         List<String> argList = Arrays.asList(args);
         //verify launch cache for a 9 onwards run

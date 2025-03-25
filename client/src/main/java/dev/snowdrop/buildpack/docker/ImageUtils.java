@@ -1,6 +1,5 @@
 package dev.snowdrop.buildpack.docker;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +22,8 @@ import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.NotFoundException;
 
 import dev.snowdrop.buildpack.config.DockerConfig;
+import dev.snowdrop.buildpack.config.ImageReference;
+import dev.snowdrop.buildpack.config.DockerConfig.PullPolicy;
 import dev.snowdrop.buildpack.BuildpackException;
 /**
  * Higher level docker image api
@@ -31,21 +33,35 @@ public class ImageUtils {
 
   public static class ImageInfo {
     public String id;
+    public String digest;
+    public String tags;
     public Map<String, String> labels;
     public String[] env;
+    public String platform;
   }
 
   /**
    * Util method to pull images, configure behavior via dockerconfig.
    */
   @SuppressWarnings("resource")
-  public static void pullImages(DockerConfig config, String... imageNames) {
-    Set<String> imageNameSet = new HashSet<>(Arrays.asList(imageNames));
+  public static void pullImages(DockerConfig config, ImageReference... images) {
+    ImageUtils.pullImages(config,null,images);
+  }
+
+  public static void pullImages(DockerConfig config, String platform, ImageReference... images) {
+
+    if(config.getPullPolicy().equals(PullPolicy.NEVER)){
+      log.debug("Image pull skipped due to policy NEVER");
+      return;
+    }
+
+    //use toCollection HashSet new, to ensure mutability guarantee (toSet works today, but offers no mutability guarantees)
+    Set<ImageReference> imageNameSet = Stream.of(images).collect(Collectors.toCollection(HashSet::new));
 
     DockerClient dc = config.getDockerClient();
 
     //if using ifnotpresent, filter set to unknown images.
-    if(config.getPullPolicy() == DockerConfig.PullPolicy.IF_NOT_PRESENT) {
+    if(config.getPullPolicy().equals(DockerConfig.PullPolicy.IF_NOT_PRESENT)) {
       // list the current known images
       List<Image> li = dc.listImagesCmd().exec();
 
@@ -55,16 +71,25 @@ public class ImageUtils {
           continue;
         }
         for (String it : i.getRepoTags()) {
-          log.debug("Known Image : "+it);
-          if (imageNameSet.contains(it)) {
-            imageNameSet.remove(it);
+          ImageReference test = new ImageReference(it);
+          log.debug("IF_NOT_PRESENT evaluating known image : "+test.getCanonicalReference()+" ("+test.getReference()+")");
+          if(!test.digestPresent() && "latest".equals(test.getTag())){
+            //no tag, or tag is latest, and no digest, means we MUST pull the image (k8s pull policy overrides IF_NOT_PRESENT for :latest tags)
+            if (imageNameSet.contains(test)) {
+              log.debug("Image "+test+" Already Known, will be repulled as image using :latest tag");
+            }
+          }else{
+            if (imageNameSet.contains(test)) {
+              log.debug("Image "+test+" Already Known, will not repull image");
+              imageNameSet.remove(test);
+            }
           }
         }
       }
 
       if (imageNameSet.isEmpty()) {
         // fast exit if all images are already known to the local docker.
-        log.debug("Nothing to pull, all of " + Arrays.asList(imageNames) + " are known");
+        log.debug("Nothing to pull, all of " + Arrays.asList(images) + " are known");
         return;
       }
     }
@@ -73,11 +98,15 @@ public class ImageUtils {
     Map<String,PullImageResultCallback> pircMap = new HashMap<>();
 
     // pull the images still in set.
-    for (String stillNeeded : imageNameSet) {
-      log.debug("pulling '" + stillNeeded + "'");
+    for (ImageReference stillNeeded : imageNameSet) {
+      log.debug("pulling '" + stillNeeded.getReferenceWithLatest() + "' "+(platform==null?"":" for platform "+platform));
       PullImageResultCallback pirc = new PullImageResultCallback();
-      dc.pullImageCmd(stillNeeded).exec(pirc);
-      pircMap.put(stillNeeded,pirc);
+      if(platform!=null){
+        dc.pullImageCmd(stillNeeded.getReferenceWithLatest()).withPlatform(platform).exec(pirc);
+      } else {
+        dc.pullImageCmd(stillNeeded.getReferenceWithLatest()).exec(pirc);
+      }
+      pircMap.put(stillNeeded.getReferenceWithLatest(),pirc);
     }
 
     // wait for pulls to complete.
@@ -90,7 +119,7 @@ public class ImageUtils {
         boolean done = false;
         try {
           if(e.getValue()==null) continue;
-          log.debug("waiting on image "+e.getKey()+" for "+thisWait+" seconds");
+          log.debug("waiting on image "+e.getKey()+" for "+thisWait+" seconds "+(platform==null?"":" for platform "+platform));
           done = e.getValue().awaitCompletion( thisWait, TimeUnit.SECONDS);
           log.debug("success for image "+e.getKey());
         } catch (InterruptedException ie) {
@@ -104,7 +133,11 @@ public class ImageUtils {
         if(!done){
           String imageName = e.getKey();
           PullImageResultCallback newPirc = new PullImageResultCallback();
-          dc.pullImageCmd(imageName).exec(newPirc);
+          if(platform!=null){
+            dc.pullImageCmd(imageName).withPlatform(platform).exec(newPirc);
+          } else {
+            dc.pullImageCmd(imageName).exec(newPirc);
+          }
           e.setValue(newPirc);
           allDone=false;      
         }else{
@@ -116,7 +149,10 @@ public class ImageUtils {
         if(lastSeen!=null){
           log.debug("Error during pull "+lastSeen.getMessage());
         }
-        log.debug("Retrying ("+retryCount+") for "+pircMap.entrySet().stream().filter(e -> e.getValue()!=null).collect(Collectors.toList()));
+        List<String> remaining = pircMap.entrySet().stream().filter(e -> e.getValue()!=null).map(i -> i.getKey()).collect(Collectors.toList());
+        if(!remaining.isEmpty()){
+          log.debug("Retrying ("+retryCount+") for "+remaining);
+        }
       }
     }
 
@@ -129,13 +165,25 @@ public class ImageUtils {
   /**
    * Util method to retrieve info for a given docker image.
    */
-  public static ImageInfo inspectImage(DockerClient dc, String imageName) {
+  public static ImageInfo inspectImage(DockerClient dc, ImageReference image) {
+    String imageName = image.getReferenceWithLatest();
     InspectImageResponse iir = dc.inspectImageCmd(imageName).exec();
-    // today we just keep the id/labels/env, can expand if needed.
+    // keep only some of the info.. 
     ImageInfo ii = new ImageInfo();
     ii.id = iir.getId();
+    if( iir.getRepoDigests() != null ){
+      ii.digest = iir.getRepoDigests().toString();
+    }
+    if ( iir.getRepoTags() != null){
+      ii.tags = iir.getRepoTags().toString();
+    }
     ii.labels = iir.getConfig().getLabels();
     ii.env = iir.getConfig().getEnv();
+    if(iir.getArch()!=null && !iir.getArch().isEmpty() && iir.getOs()!=null && !iir.getOs().isEmpty()){
+      ii.platform = iir.getOs()+"/"+iir.getArch();
+    }else{
+      ii.platform = null;
+    }
     return ii;
   }
 }

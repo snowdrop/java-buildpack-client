@@ -8,18 +8,21 @@ import com.github.dockerjava.api.command.WaitContainerResultCallback;
 import dev.snowdrop.buildpack.BuilderImage;
 import dev.snowdrop.buildpack.ContainerLogReader;
 import dev.snowdrop.buildpack.docker.ContainerUtils;
+import dev.snowdrop.buildpack.docker.StringContent;
 import dev.snowdrop.buildpack.lifecycle.ContainerStatus;
 import dev.snowdrop.buildpack.lifecycle.LifecyclePhase;
+import dev.snowdrop.buildpack.lifecycle.LifecyclePhaseAnalyzedTomlUpdater;
 import dev.snowdrop.buildpack.lifecycle.LifecyclePhaseFactory;
 import dev.snowdrop.buildpack.utils.LifecycleArgs;
 
 
-public class Restorer implements LifecyclePhase{
+public class Restorer implements LifecyclePhase, LifecyclePhaseAnalyzedTomlUpdater{
 
     private static final Logger log = LoggerFactory.getLogger(Restorer.class);
 
     final LifecyclePhaseFactory factory;
     final BuilderImage originalBuilder;
+    private byte[] analyzedToml = null;
 
     public Restorer( LifecyclePhaseFactory factory , BuilderImage originalBuilder){
         this.factory = factory;
@@ -48,7 +51,7 @@ public class Restorer implements LifecyclePhase{
             
             //Can't use ephemeral/extended builder here as not in registry and restore tries to pull image..
             //Use original configured builder instead.. 
-            args.addArg("-build-image", originalBuilder.getImage().getReference());
+            args.addArg("-build-image", originalBuilder.getImage().getReferenceWithLatest());
         }
 
         int runAsId = factory.getBuilderImage().getUserId();
@@ -79,7 +82,11 @@ public class Restorer implements LifecyclePhase{
 
             // wait for the container to complete, and retrieve the exit code.
             int rc = factory.getDockerConfig().getDockerClient().waitContainerCmd(id).exec(new WaitContainerResultCallback()).awaitStatusCode();
-            log.info("Restorer container complete, with exit code " + rc);    
+            log.info("Restorer container complete, with exit code " + rc);
+
+            analyzedToml = ContainerUtils.getFileFromContainer(factory.getDockerConfig().getDockerClient(), 
+            id, 
+            LifecyclePhaseFactory.LAYERS_VOL_PATH + "/analyzed.toml");
 
             return ContainerStatus.of(rc,id);
         }catch(Exception e){
@@ -90,6 +97,14 @@ public class Restorer implements LifecyclePhase{
             }
             throw e;
         }
+    }
+
+    public byte[] getAnalyzedToml(){
+        return analyzedToml;
+    }
+
+    public void updateAnalyzedToml(String toml){
+        factory.addContentToLayersVolume(new StringContent("analyzed.toml", 0777, toml));
     }
     
 }

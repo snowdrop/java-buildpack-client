@@ -34,7 +34,6 @@ public class Builder implements LifecyclePhase{
         args.addArg("-platform", LifecyclePhaseFactory.PLATFORM_VOL_PATH);
         args.addArg("-log-level", factory.getLogConfig().getLogLevel());
 
-        //builder process has to run as root.
         int runAsId = factory.getBuilderImage().getUserId();
         String id = factory.getContainerForPhase(args.toArray(), runAsId);
         try{

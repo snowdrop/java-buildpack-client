@@ -33,7 +33,7 @@ public class Exporter implements LifecyclePhase{
         //0.12 onwards.. -stack is removed and replaced with -run
         //               /cnb/stack.toml removed, replaced with /cnb/run.toml
 
-        LifecycleArgs args = new LifecycleArgs("/cnb/lifecycle/exporter", factory.getOutputImage().getReference());
+        LifecycleArgs args = new LifecycleArgs("/cnb/lifecycle/exporter", factory.getOutputImage().getReferenceWithLatest());
 
         args.addArg("-uid", "" + factory.getBuilderImage().getUserId());
         args.addArg("-gid", "" + factory.getBuilderImage().getGroupId());
@@ -44,7 +44,7 @@ public class Exporter implements LifecyclePhase{
         args.addArg("-log-level", factory.getLogConfig().getLogLevel());
 
         if(factory.getPlatformLevel().lessThan("0.7")){
-            args.addArg("-run-image", factory.getBuilderImage().getRunImages(factory.getPlatformLevel()).get(0));
+            args.addArg("-run-image", factory.getBuilderImage().getRunImages(factory.getPlatformLevel())[0].getReferenceWithLatest());
         }
         if(factory.getPlatformLevel().atLeast("0.12") && runExtended){
             args.addArg("-run", "/cnb/run.toml");

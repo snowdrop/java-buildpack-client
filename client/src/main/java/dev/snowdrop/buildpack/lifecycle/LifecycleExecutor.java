@@ -7,10 +7,13 @@ import org.tomlj.TomlParseResult;
 
 import dev.snowdrop.buildpack.BuildConfig;
 import dev.snowdrop.buildpack.BuilderImage;
+import dev.snowdrop.buildpack.config.ImageReference;
 import dev.snowdrop.buildpack.docker.ContainerUtils;
 import dev.snowdrop.buildpack.docker.ImageUtils;
+import dev.snowdrop.buildpack.docker.ImageUtils.ImageInfo;
 import dev.snowdrop.buildpack.lifecycle.phases.Analyzer;
 import dev.snowdrop.buildpack.lifecycle.phases.Detector;
+import dev.snowdrop.buildpack.lifecycle.phases.Restorer;
 
 public class LifecycleExecutor {
 
@@ -91,31 +94,54 @@ public class LifecycleExecutor {
                         if(rc!=0) break;
                     }
 
-                    //move this to new method
-                    boolean extendedRunImage=false;
+                    //after detector.. a new run image may have been set in the analyzed.toml
+                    //read this and correct it if the image name is badly formed.
+                    //image names without a tag will cause docker-java to download EVERY tag, this is a huge amount of 
+                    //data and will lead to timeout before completion.
                     if(activePlatformLevel.atLeast("0.10") && factory.getBuilderImage().hasExtensions()){
-                        byte[] analyzerToml = detector.getAnalyzedToml();
-                        
-                        TomlParseResult analyzed = Toml.parse(new String(analyzerToml));
-                        String newRunImage = analyzed.getString("run-image.reference");
 
-                        if(activePlatformLevel.atLeast("0.12")){
-                            Boolean extend = analyzed.getBoolean("run-image.extend");
-                            extendedRunImage = extend == null ? false : extend.booleanValue();
-                        }
+                        //read analyzed.toml, and update the run reference to a sanitized form.
+                        ImageReference runRef = updateRunReference(detector);
 
-                        //pull the new image.. 
-                        ImageUtils.pullImages(config.getDockerConfig(), newRunImage);
+                        if(runRef!=null){
+                            //pull the new image in case restorer is going to read from it.
+                            //in platforms 0.12 and above, restorer in daemon mode will read run image metadata from the 
+                            //image stored in the daemon, rather than from a registry.
+                            if(config.getDockerConfig().getUseDaemon()){
+                                pullRunImage(runRef);
+                            }
 
-                        //update run image associated with our builder image.
-                        factory.getBuilderImage().getRunImages(activePlatformLevel).clear();
-                        factory.getBuilderImage().getRunImages(activePlatformLevel).add(newRunImage);
-
-                        //TODO: if config.getRunImage is non-null, should we override the run-image from an extension here? 
+                            //update the run image for our builder image with the sanitized run image.
+                            factory.getBuilderImage().setRunImage(runRef);
+                        }  
                     }
 
-                    rc=runPhase(factory.getRestorer());
+                    Restorer restorer = (Restorer)factory.getRestorer();
+                    rc=runPhase(restorer);
                     if(rc!=0) break;
+
+                    //restorer can update the image reference, this has been observed during multi-arch daemon builds,
+                    //test if the analyzed.toml run ref is still the one we 
+                    if(config.getDockerConfig().getUseDaemon()){
+                        //in daemon mode, at platforms 0.10 and 0.12, the image may now be specified by digest
+                        //if the run image is multi-arch, restorer updates the analyzed.toml to add the digest of the architecture specific image
+                        //this will not always match the digest for the run image pulled after detect with architecture, depending on container runtime
+                        //repull the run image if it has a digest, just to be certain, else exporter will fail when the image is not present.
+                        ImageReference runRef = getRunReference(restorer);
+
+                        //if the new runRef has a digest, and no longer matches the expected run image, then update the builder's runImage.
+                        if(runRef!=null && runRef.digestPresent() && !factory.getBuilderImage().getRunImages(activePlatformLevel)[0].equals(runRef)){
+                            pullRunImage(runRef);
+                            //update the run image for our builder image with the digest specified run image.
+                            factory.getBuilderImage().setRunImage(runRef);
+                        }
+                    }
+
+                    boolean extendedRunImage=false;
+                    if(activePlatformLevel.atLeast("0.10") && factory.getBuilderImage().hasExtensions()){
+                        //if run image extension is requested, we need to drive the run image extension phase, alongside build image extension.
+                        extendedRunImage = isRunImageExtensionRequired(restorer,activePlatformLevel);
+                    }
 
                     if(activePlatformLevel.atLeast("0.10") && factory.getBuilderImage().hasExtensions()){
                         rc=runPhase(factory.getBuildImageExtender());
@@ -137,7 +163,8 @@ public class LifecycleExecutor {
                 }while(false);
             }
             if(rc==0){
-                log.info("Buildpack build phases complete, application image is at "+config.getOutputImage().getReference());
+                log.info("Buildpack build success.");
+                log.info("Buildpack build phases complete, application image is at "+config.getOutputImage().getReferenceWithLatest());
             }
             return rc;            
         }finally{
@@ -146,6 +173,49 @@ public class LifecycleExecutor {
         }
     }
 
+    private ImageReference updateRunReference(LifecyclePhaseAnalyzedTomlUpdater phase){
+        ImageReference runRef = getRunReference(phase);
+        if(runRef!=null){
+            String oldToml = new String(phase.getAnalyzedToml());
+            String newToml = oldToml.replaceAll(runRef.getReference(),runRef.getReferenceWithLatest());     
+            phase.updateAnalyzedToml(newToml);
+            return runRef;
+        }else{
+            return null;
+        }
+    }
+
+    private ImageReference getRunReference(LifecyclePhaseAnalyzedTomlUpdater phase){
+        byte[] analyzedToml = phase.getAnalyzedToml();
+        if(analyzedToml == null){
+            return null;
+        }
+        TomlParseResult analyzed = Toml.parse(new String(analyzedToml));
+        String newRunImage = analyzed.getString("run-image.reference");
+        return new ImageReference(newRunImage);
+    }
+
+    private boolean isRunImageExtensionRequired(LifecyclePhaseAnalyzedTomlUpdater phase, Version activePlatformLevel){
+        boolean extendedRunImage = false;
+        if(activePlatformLevel.atLeast("0.12")){
+            byte[] analyzedToml = phase.getAnalyzedToml();
+            TomlParseResult analyzed = Toml.parse(new String(analyzedToml));
+
+            Boolean extend = analyzed.getBoolean("run-image.extend");
+            extendedRunImage = extend == null ? false : extend.booleanValue();
+        }
+        return extendedRunImage;
+    }
+
+    private void pullRunImage(ImageReference runRef) {
+        //pull the new image.. (use platform read from builder image)
+        log.debug("Pulling new Run Image by sha"); 
+        ImageUtils.pullImages(config.getDockerConfig(), factory.getBuilderImage().getImagePlatform(), runRef);
+
+        //collect the run image id/digests for debug (helpful in edge case run image mismatches)
+        ImageInfo ii = ImageUtils.inspectImage(config.getDockerConfig().getDockerClient(), runRef);
+        log.debug("new Run Image ID "+ii.id+" with Digests "+ii.digest+" Tags "+ii.tags+" for platform "+ii.platform);
+    }
 
     private int runPhase(LifecyclePhase phase){
         ContainerStatus phaseRC = phase.runPhase(config.getLogConfig().getLogger(), config.getLogConfig().getUseTimestamps());

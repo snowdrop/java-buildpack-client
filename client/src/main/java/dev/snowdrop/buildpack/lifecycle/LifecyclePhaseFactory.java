@@ -15,6 +15,7 @@ import dev.snowdrop.buildpack.config.DockerConfig;
 import dev.snowdrop.buildpack.config.ImageReference;
 import dev.snowdrop.buildpack.config.LogConfig;
 import dev.snowdrop.buildpack.config.PlatformConfig;
+import dev.snowdrop.buildpack.config.RegistryAuthConfig;
 import dev.snowdrop.buildpack.docker.ContainerEntry;
 import dev.snowdrop.buildpack.docker.ContainerUtils;
 import dev.snowdrop.buildpack.docker.Content;
@@ -96,7 +97,7 @@ public class LifecyclePhaseFactory {
 
         // create a container using builderImage that will invoke the creator process
         String id = ContainerUtils.createContainer(dockerConfig.getDockerClient(), 
-                                                   builder.getImage().getReference(), 
+                                                   builder.getImage().getCanonicalReference(), 
                                                    Arrays.asList(args), 
                                                    runAsId, 
                                                    platformConfig.getEnvironment(), 
@@ -113,7 +114,7 @@ public class LifecyclePhaseFactory {
           log.debug("- mounted " + dockerConfig.getDockerSocket() + " at " + LifecyclePhaseFactory.DOCKER_SOCKET_PATH);
         log.debug("- mounted " + outputVolume + " at " + LAYERS_VOL_PATH);
         log.debug("- container id " + id);
-        log.debug("- image reference "+builder.getImage().getReference()); 
+        log.debug("- image reference "+builder.getImage().getCanonicalReference()); 
         return id;
     }
 
@@ -168,7 +169,7 @@ public class LifecyclePhaseFactory {
         log.info("Adding application to volume "+applicationVolume);
         VolumeUtils.addContentToVolume(dockerConfig.getDockerClient(), 
                                        applicationVolume,
-                                       builder.getImage().getReference(), 
+                                       builder.getImage().getCanonicalReference(), 
                                        LifecyclePhaseFactory.APP_PATH_PREFIX, 
                                        builder.getUserId(), 
                                        builder.getGroupId(), 
@@ -177,13 +178,48 @@ public class LifecyclePhaseFactory {
         //add workarounds to environment.
         if(!platformConfig.getEnvironment().containsKey("CNB_PLATFORM_API")) platformConfig.getEnvironment().put("CNB_PLATFORM_API", platformLevel.toString());
 
-        // This a workaround for a bug in older lifecyle revisions. https://github.com/buildpacks/lifecycle/issues/339        
-        if(!platformConfig.getEnvironment().containsKey("CNB_REGISTRY_AUTH")) platformConfig.getEnvironment().put("CNB_REGISTRY_AUTH", "{}");
+        //warn if the user is trying to set CNB_REGISTRY_AUTH _and_ pass in registry auth objects.
+        if(platformConfig.getEnvironment().containsKey("CNB_REGISTRY_AUTH") && dockerConfig.getAuthConfigs().size()>0){
+            log.warn("Registry auth configs passed while CNB_REGISTRY_AUTH is set, if values do not agree, behavior is undefined");
+        }
+
+   
+        if(!platformConfig.getEnvironment().containsKey("CNB_REGISTRY_AUTH")) {
+            // This default is a workaround for a bug in older lifecyle revisions. https://github.com/buildpacks/lifecycle/issues/339  
+            String registryJson = "{}";
+
+            // if we have auth configs, update registry json with values.
+            if(dockerConfig.getAuthConfigs().size()>0){
+                registryJson = "{ ";
+                for(RegistryAuthConfig rac : dockerConfig.getAuthConfigs()){
+                    //add comma if this isnt our first time round.
+                    if(registryJson.length() > 3){
+                        registryJson += ", ";
+                    }
+                    //figure out appropriate header for different auth creds.
+                    if(rac.getUsername() != null && rac.getPassword() != null){
+                        String b64auth = java.util.Base64.getEncoder().encodeToString((rac.getUsername()+":"+rac.getPassword()).getBytes());
+                        registryJson += " \""+rac.getRegistryAddress()+"\":\"Basic "+b64auth+"\" ";
+                    }else if(rac.getAuth() != null){
+                        registryJson += " \""+rac.getRegistryAddress()+"\":\"Basic "+rac.getAuth()+"\" ";
+                    }else if(rac.getRegistryToken() != null){
+                        registryJson += " \""+rac.getRegistryAddress()+"\":\"Bearer "+rac.getRegistryToken()+"\" ";
+                    }else{
+                        log.warn("Unknown auth type represented by AuthConfig");
+                        throw new IllegalStateException("Unsupported AuthConfig");
+                    }
+                }
+                registryJson+=" } "; 
+            }
+                
+            platformConfig.getEnvironment().put("CNB_REGISTRY_AUTH", registryJson);
+        }
 
         //enable experimental features when required.
         if(builder.hasExtensions() && 
            platformLevel.atLeast("0.10") && 
-           !platformConfig.getEnvironment().containsKey("CNB_EXPERIMENTAL_MODE")) {   
+           !platformConfig.getEnvironment().containsKey("CNB_EXPERIMENTAL_MODE")) { 
+           log.info("Builder uses extensions, enabling experimental features.");  
            platformConfig.getEnvironment().put("CNB_EXPERIMENTAL_MODE", "warn");
         }
 
@@ -196,7 +232,7 @@ public class LifecyclePhaseFactory {
         log.info("Adding platform entries to platform volume "+platformVolume);
         VolumeUtils.addContentToVolume(dockerConfig.getDockerClient(), 
                                        platformVolume,
-                                       builder.getImage().getReference(),
+                                       builder.getImage().getCanonicalReference(),
                                        LifecyclePhaseFactory.ENV_PATH_PREFIX, 
                                        builder.getUserId(), 
                                        builder.getGroupId(),
@@ -223,6 +259,16 @@ public class LifecyclePhaseFactory {
         VolumeUtils.removeVolume(dockerConfig.getDockerClient(), platformVolume);
     
         log.info("- temporary build volumes removed");     
+    }
+
+    public void addContentToLayersVolume(StringContent content){
+        VolumeUtils.addContentToVolume(dockerConfig.getDockerClient(), 
+                                       outputVolume, 
+                                       builder.getImage().getCanonicalReference(), 
+                                       "", 
+                                       builder.getUserId(),
+                                       builder.getGroupId(),
+                                       content.getContainerEntries());
     }
 
     public BuilderImage getBuilderImage(){
