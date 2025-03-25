@@ -44,6 +44,9 @@ public class pack {
 
       String JDK="17";
 
+      Map<String,String> envMap = new java.util.HashMap<>();
+      envMap.put("BP_JVM_VERSION",JDK);
+
       int exitCode = BuildConfig.builder()
                            //.withBuilderImage(new ImageReference("docker.io/paketocommunity/builder-ubi-base"))
                            .withBuilderImage(new ImageReference("quay.io/ozzydweller/testbuilders:paketo-default"))
@@ -53,7 +56,7 @@ public class pack {
                            .and()
                            .withNewPlatformConfig()
                               .withPhaseDebugScript(debugScript)
-                              .withEnvironment(Map.of("BP_JVM_VERSION",JDK))
+                              .withEnvironment(envMap)
                            .and()
                            .withNewLogConfig()
                               .withLogger(new SystemLogger())
