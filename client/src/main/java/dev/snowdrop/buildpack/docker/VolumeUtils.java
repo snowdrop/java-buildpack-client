@@ -92,6 +92,7 @@ public class VolumeUtils {
 
       log.trace("- Attaching log relay for volume copy container");
 
+      //log relays for ignore/debug for this operation.
       ContainerLogReader slf4j = new ContainerLogReader(new dev.snowdrop.buildpack.Slf4jLogger(VolumeUtils.class));
       ContainerLogReader ignore = new ContainerLogReader(null){
         public void onNext(Frame object) {
@@ -99,12 +100,8 @@ public class VolumeUtils {
         }
       };
       
-      ContainerLogReader logger = null;
-      if(log.isDebugEnabled()){
-        logger = slf4j;
-      }else{
-        logger = ignore;
-      }
+      //if debug is enabled for this class, collect container logs 
+      ContainerLogReader logger = log.isDebugEnabled() ? slf4j : ignore;
 
       // pull the logs, but ignore them.. we're only executing -version on lifecycle.
       dc.logContainerCmd(dummyId)

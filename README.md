@@ -304,15 +304,8 @@ To use it, configure the following mandatory environment variables pointing to a
 
 ```bash
 export PROJECT_PATH=<JAVA_PROJECT>
-export IMAGE_REF=<IMAGE_REF> // <IMAGE_NAME> without registry or <REGISTRY_SERVER>/<REGISTRY_ORG>/<IMAGE_NAME>
-```
-
-**Important**: To avoid the `docker rate limit` problem, then set this `CNB_` environment variable to let `lifecycle` to get rid of the limit:
-```bash
-export CNB_REGISTRY_AUTH="'{"index.docker.io":"Basic <BASE64_OF_USERNAME:PASSWORD>"}'"
-
-// Replace `<BASE64_OF_USERNAME:PASSWORD> text with
-echo -n "username:password" | base64
+# <IMAGE_REF> can be a local reference with a name and tag without registry, or a full registry reference with host, port(optional), path & tag
+export IMAGE_REF=<IMAGE_REF> 
 ```
 
 If you plan to push your image to a registry, then set your registry credential using these variables:
@@ -329,7 +322,6 @@ mvn compile exec:java
 You can also pass the `BP_` or `CNB_` environment variables:
 ```bash
 export BP_JVM_VERSION="21"
-export BP_MAVEN_BUILT_ARTIFACT="target/quarkus-app/lib/ target/quarkus-app/*.jar target/quarkus-app/app/ target/quarkus-app/quarkus"
 export CNB_LOG_LEVEL=debug
 etc
 ```
