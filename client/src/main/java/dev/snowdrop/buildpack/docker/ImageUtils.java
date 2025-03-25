@@ -121,7 +121,7 @@ public class ImageUtils {
           if(e.getValue()==null) continue;
           log.debug("waiting on image "+e.getKey()+" for "+thisWait+" seconds "+(platform==null?"":" for platform "+platform));
           done = e.getValue().awaitCompletion( thisWait, TimeUnit.SECONDS);
-          log.debug("success for image "+e.getKey());
+          if(done){ log.debug("success for image "+e.getKey()); }
         } catch (InterruptedException ie) {
           throw BuildpackException.launderThrowable(ie);
         } catch (DockerClientException dce) {
