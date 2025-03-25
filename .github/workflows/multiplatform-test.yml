@@ -171,6 +171,10 @@ jobs:
           echo "Docker information"
           docker info
 
+      # Checkout the project
+      - name: Checkout
+        uses: actions/checkout@v4
+
       # Install appropriate level jdk
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -195,10 +199,6 @@ jobs:
 
           # Add jbang to the path for future steps.
           echo "$HOME\.jbang\bin" >> $GITHUB_PATH        
-          
-      # Checkout the project
-      - name: Checkout
-        uses: actions/checkout@v4
 
       - name: Build library
         run: |
