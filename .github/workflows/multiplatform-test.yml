@@ -201,9 +201,9 @@ jobs:
 
       - name: Build library
         run: |
-          ./mvnw compile
-          ./mvnw package
-          ./mvnw install
+          ./mvnw compile -DskipTests --no-transfer-progress
+          ./mvnw package -DskipTests --no-transfer-progress
+          ./mvnw install -DskipTests --no-transfer-progress
 
       - name: Build test project (win)
         if: matrix.projects.runner == 'windows-latest'
