@@ -213,7 +213,7 @@ jobs:
           ./mvnw install -DskipTests --no-transfer-progress --update-snapshots
           
           $env:POMVER=(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
-          $env:CURRENT_WORKFLOW_DEP=dev.snowdrop:java-buildpack-client:${POMVER}
+          export CURRENT_WORKFLOW_DEP=dev.snowdrop:java-buildpack-client:${POMVER}
           $env:PROJECT_PATH="${{ matrix.projects.project }}"
           $env:JDK="${{ matrix.projects.java }}"
 
@@ -236,7 +236,7 @@ jobs:
           ./mvnw install -DskipTests --no-transfer-progress --update-snapshots
           
           POMVER=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
-          export CURRENT_WORKFLOW_DEP=dev.snowdrop:java-buildpack-client:${POMVER}
+          export CURRENT_WORKFLOW_DEP=dev.snowdrop:buildpack-client:${POMVER}
           export PROJECT_PATH=./samples/testcases/${{ matrix.projects.project }}
           export JDK=${{ matrix.projects.java }}
 
