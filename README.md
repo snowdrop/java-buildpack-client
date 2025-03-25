@@ -77,7 +77,7 @@ Want to try out this project? The packages/api are not fixed in stone yet, so be
         <dependency>
             <groupId>dev.snowdrop</groupId>
             <artifactId>buildpack-client</artifactId>
-            <version>0.0.12</version>
+            <version>0.0.13</version>
         </dependency> 
 ```
 
@@ -268,7 +268,7 @@ So, you can drop the following file in your project: (swap XXX for latest releas
 ```java
 ///usr/bin/env jbang "$0" "$@" ; exit $?
 
-//DEPS dev.snowdrop:buildpack-client:0.0.12}
+//DEPS dev.snowdrop:buildpack-client:0.0.13}
 import static java.lang.System.*;
 
 import java.io.File;
