@@ -5,9 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.github.dockerjava.api.DockerClient;
 import dev.snowdrop.buildpack.*;
 import dev.snowdrop.buildpack.config.*;
+import dev.snowdrop.buildpack.docker.*;
+import dev.snowdrop.buildpack.utils.OperatingSytem;
 
 import static dev.snowdrop.buildpack.docker.DockerClientUtils.getDockerClient;
 
@@ -25,7 +26,6 @@ public class BuildMe {
         String REGISTRY_SERVER = System.getenv("REGISTRY_SERVER");
         String IMAGE_REF = System.getenv("IMAGE_REF");
         String PROJECT_PATH = System.getenv("PROJECT_PATH");
-        String DOCKER_HOST = System.getenv("DOCKER_HOST");
 
         Map<String, String> envMap = System.getenv().entrySet().stream()
             .filter(entry -> entry.getKey().startsWith("BP_") || entry.getKey().startsWith("CNB_"))
@@ -36,11 +36,18 @@ public class BuildMe {
                 HashMap::new
             ));
 
-        DockerClient client = getDockerClient();
-        client.authConfig()
-            .withUsername(REGISTRY_USERNAME)
-            .withPassword(REGISTRY_PASSWORD)
-            .withRegistryAddress(REGISTRY_SERVER);
+        List<RegistryAuthConfig> authInfo = new ArrayList<>();
+        if(System.getenv("REGISTRY_ADDRESS")!=null){
+          String registry = System.getenv("REGISTRY_SERVER");
+          String username = System.getenv("REGISTRY_USER");
+          String password = System.getenv("REGISTRY_PASS");
+          RegistryAuthConfig authConfig = RegistryAuthConfig.builder()
+                                                .withRegistryAddress(registry)
+                                                .withUsername(username)
+                                                .withPassword(password)
+                                                .build();
+          authInfo.add(authConfig);
+        }
 
         int exitCode = BuildConfig.builder()
             .withBuilderImage(new ImageReference("paketocommunity/builder-ubi-base:latest"))
@@ -49,8 +56,8 @@ public class BuildMe {
               .withEnvironment(envMap)
             .endPlatformConfig()
             .withNewDockerConfig()
-              .withDockerClient(client)
-              .withDockerHost(DOCKER_HOST)
+              .withAuthConfigs(authInfo)
+              .withUseDaemon(false)
             .endDockerConfig()
             .withNewLogConfig()
               .withLogger(new SystemLogger())
