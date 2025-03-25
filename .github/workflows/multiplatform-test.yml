@@ -237,4 +237,4 @@ jobs:
           export OUTPUT_IMAGE=quay.io/ozzydweller/snowdropbuildtests:daemon.${{ matrix.projects.label }}
 
           chmod +x ./samples/testcases/RunTest.java
-          /samples/testcases/RunTest.java
+          ./samples/testcases/RunTest.java
