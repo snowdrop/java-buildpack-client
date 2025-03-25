@@ -81,26 +81,6 @@
           </compilerArgs>
         </configuration>
       </plugin>
-  <plugin>
-    <groupId>org.codehaus.mojo</groupId>
-    <artifactId>exec-maven-plugin</artifactId>
-    <version>1.5.0</version>
-    <executions>
-      <execution>
-        <phase>compile</phase>
-        <goals>
-           <goal>exec</goal>
-        </goals>
-        <configuration>
-          <executable>/bin/sh</executable>
-          <workingDirectory>${basedir}</workingDirectory>
-          <arguments>
-            <argument>${basedir}/id-debug.sh</argument>
-          </arguments>
-        </configuration>
-      </execution>
-    </executions>
-  </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${surefire-plugin.version}</version>
