@@ -211,7 +211,7 @@ jobs:
         run: |
           echo "Setting up to build ${{ matrix.projects.project }} with ${{ matrix.projects.java-buildpack-lib-jitpack}} on ${{ matrix.projects.runner }}"
           
-          $env:POMVER=(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          $env:POMVER=(.\mvnw help:evaluate "-Dexpression=project.version" -q -DforceStdout)
           $env:CURRENT_WORKFLOW_DEP="dev.snowdrop:buildpack-client:$env:POMVER"
           $env:PROJECT_PATH="${{ matrix.projects.project }}"
           $env:JDK="${{ matrix.projects.java }}"
@@ -220,7 +220,7 @@ jobs:
           $jbang = ([scriptblock]::Create($(iwr -useb https://ps.jbang.dev)))
 
           echo "Launching JBang"
-          cd samples\testcases
+          cd samples/testcases
           $jrc=& $jbang run RunRegistryTest.java | select -Last 1
           
           echo "After jbang result: $jrc"
@@ -238,10 +238,10 @@ jobs:
           export JDK=${{ matrix.projects.java }}
 
           export REGISTRY_ADDRESS=quay.io
-          export REGISTRY_USER=${{ secrets.QUAY_USER }}
-          export REGISTRY_PASS=${{ secrets.QUAY_TOKEN }}
+          export REGISTRY_USER=${{ secrets.BP_QUAY_USER }}
+          export REGISTRY_PASS=${{ secrets.BP_QUAY_TOKEN }}
 
           export OUTPUT_IMAGE=quay.io/ozzydweller/snowdropbuildtests:registry.${{ matrix.projects.label }}
 
           chmod +x /samples/testcases/RunRegistryTest.java
-          /samples/testcases/RunRegistryTest.java
+          ./samples/testcases/RunRegistryTest.java
