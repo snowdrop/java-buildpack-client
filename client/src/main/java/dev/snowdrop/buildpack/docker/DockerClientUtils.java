@@ -55,6 +55,7 @@ public class DockerClientUtils {
         .build();
 
     AuthDelegatingDockerClientConfig addcc = new AuthDelegatingDockerClientConfig(config);
+    addcc.setRegistryAuthConfigs(authConfigs);
 
     DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
         .dockerHost(config.getDockerHost())
