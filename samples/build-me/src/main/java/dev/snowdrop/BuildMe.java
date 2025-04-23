@@ -17,11 +17,11 @@ public class BuildMe {
         System.setProperty("org.slf4j.simpleLogger.log.dev.snowdrop.buildpack.lifecycle.phases","debug");
 
         String IMAGE_REF = Optional.ofNullable(System.getenv("IMAGE_REF"))
-            .orElseThrow(() -> new IllegalStateException("Missing env var: PROJECT_PATH"));
+            .orElseThrow(() -> new IllegalStateException("Missing env var: IMAGE_REF"));
         String PROJECT_PATH = Optional.ofNullable(System.getenv("PROJECT_PATH"))
             .orElseThrow(() -> new IllegalStateException("Missing env var: PROJECT_PATH"));
-
-        String USE_DAEMON = Optional.ofNullable(System.getenv("USE_DAEMON")).orElse("false");
+        String USE_DAEMON = Optional.ofNullable(System.getenv("USE_DAEMON"))
+            .orElse("false");
 
         Map<String, String> envMap = System.getenv().entrySet().stream()
             .filter(entry -> entry.getKey().startsWith("BP_") || entry.getKey().startsWith("CNB_"))
