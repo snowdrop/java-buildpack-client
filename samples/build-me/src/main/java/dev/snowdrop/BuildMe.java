@@ -21,6 +21,8 @@ public class BuildMe {
         String PROJECT_PATH = Optional.ofNullable(System.getenv("PROJECT_PATH"))
             .orElseThrow(() -> new IllegalStateException("Missing env var: PROJECT_PATH"));
 
+        String USE_DAEMON = Optional.ofNullable(System.getenv("USE_DAEMON")).orElse("false");
+
         Map<String, String> envMap = System.getenv().entrySet().stream()
             .filter(entry -> entry.getKey().startsWith("BP_") || entry.getKey().startsWith("CNB_"))
             .collect(Collectors.toMap(
@@ -51,7 +53,7 @@ public class BuildMe {
             .endPlatformConfig()
             .withNewDockerConfig()
               .withAuthConfigs(authInfo)
-              .withUseDaemon(true)
+              .withUseDaemon(Boolean.parseBoolean(USE_DAEMON))
             .endDockerConfig()
             .withNewLogConfig()
               .withLogger(new SystemLogger())
