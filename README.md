@@ -332,6 +332,21 @@ etc
 
 Yes, tested against podman 4 and 5, in rootless and rootful modes, on macos and linux. 
 
+Note you probably will need to update the podman socket timeout, to avoid a disagreement between the docker-java api and podman.. 
+_(as per https://github.com/testcontainers/testcontainers-java/issues/7310 )_
+
+- Linux:
+```bash
+          sudo mkdir -p /etc/containers/containers.conf.d
+          printf "[engine]\nservice_timeout=91\n" | sudo tee -a /etc/containers/containers.conf.d/service-timeout.conf
+```
+
+- Mac:
+```bash
+          echo 'mkdir -p /etc/containers/containers.conf.d && printf "[engine]\nservice_timeout=91\n" > /etc/containers/containers.conf.d/service-timeout.conf && systemctl restart podman.socket' |  podman machine ssh --username root --
+```
+
+
 **Does this work on Windows?:**
 
 Yes.. it's supposed to! (although the automated test suite on github is unable to run as the runners don't support nested virtualization)
