@@ -18,6 +18,11 @@ export REGISTRY_PASSWORD="<REGISTRY_PASSWORD>"
 export REGISTRY_SERVER="docker.io"
 ```
 
+If ypu prefer that lifecycle access directly the registry internally, then set to true the following variable:
+```shell
+export USE_DAEMON=true
+```
+
 Execute this command in a terminal:
 ```bash
 mvn compile exec:java

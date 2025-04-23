@@ -1,16 +1,11 @@
 package dev.snowdrop;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import dev.snowdrop.buildpack.*;
 import dev.snowdrop.buildpack.config.*;
-import dev.snowdrop.buildpack.docker.*;
-import dev.snowdrop.buildpack.utils.OperatingSytem;
-
-import static dev.snowdrop.buildpack.docker.DockerClientUtils.getDockerClient;
 
 public class BuildMe {
         
@@ -21,11 +16,12 @@ public class BuildMe {
         System.setProperty("org.slf4j.simpleLogger.log.dev.snowdrop.buildpack.lifecycle","debug");
         System.setProperty("org.slf4j.simpleLogger.log.dev.snowdrop.buildpack.lifecycle.phases","debug");
 
-        String REGISTRY_USERNAME = System.getenv("REGISTRY_USERNAME");
-        String REGISTRY_PASSWORD = System.getenv("REGISTRY_PASSWORD");
-        String REGISTRY_SERVER = System.getenv("REGISTRY_SERVER");
-        String IMAGE_REF = System.getenv("IMAGE_REF");
-        String PROJECT_PATH = System.getenv("PROJECT_PATH");
+        String IMAGE_REF = Optional.ofNullable(System.getenv("IMAGE_REF"))
+            .orElseThrow(() -> new IllegalStateException("Missing env var: IMAGE_REF"));
+        String PROJECT_PATH = Optional.ofNullable(System.getenv("PROJECT_PATH"))
+            .orElseThrow(() -> new IllegalStateException("Missing env var: PROJECT_PATH"));
+        String USE_DAEMON = Optional.ofNullable(System.getenv("USE_DAEMON"))
+            .orElse("false");
 
         Map<String, String> envMap = System.getenv().entrySet().stream()
             .filter(entry -> entry.getKey().startsWith("BP_") || entry.getKey().startsWith("CNB_"))
@@ -57,7 +53,7 @@ public class BuildMe {
             .endPlatformConfig()
             .withNewDockerConfig()
               .withAuthConfigs(authInfo)
-              .withUseDaemon(false)
+              .withUseDaemon(Boolean.parseBoolean(USE_DAEMON))
             .endDockerConfig()
             .withNewLogConfig()
               .withLogger(new SystemLogger())
