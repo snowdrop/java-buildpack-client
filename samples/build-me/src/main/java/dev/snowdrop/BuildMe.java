@@ -9,10 +9,6 @@ import java.util.stream.Collectors;
 
 import dev.snowdrop.buildpack.*;
 import dev.snowdrop.buildpack.config.*;
-import dev.snowdrop.buildpack.docker.*;
-import dev.snowdrop.buildpack.utils.OperatingSytem;
-
-import static dev.snowdrop.buildpack.docker.DockerClientUtils.getDockerClient;
 
 public class BuildMe {
         
