@@ -15,7 +15,12 @@ If you plan to push your image to a registry, then set your registry credential 
 ```bash
 export REGISTRY_USERNAME="<REGISTRY_USERNAME>"
 export REGISTRY_PASSWORD="<REGISTRY_PASSWORD>"
-export REGISTRY_SERVER="docker.io"
+export REGISTRY_ADDRESS="docker.io"
+```
+
+If you prefer that lifecycle don't access the mounted docker socket but talk directly with the container registry to build the image, then set to `false` the following variable:
+```shell
+export USE_DAEMON=false
 ```
 
 Execute this command in a terminal:

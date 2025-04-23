@@ -312,7 +312,7 @@ If you plan to push your image to a registry, then set your registry credential 
 ```bash
 export REGISTRY_USERNAME="<REGISTRY_USERNAME>"
 export REGISTRY_PASSWORD="<REGISTRY_PASSWORD>"
-export REGISTRY_SERVER="docker.io"
+export REGISTRY_ADDRESS="docker.io"
 ```
 
 Execute this command in a terminal:
