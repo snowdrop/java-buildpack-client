@@ -74,11 +74,11 @@ public class BuildpackBuild {
             throw new BuildpackException("Unable to connect to container runtime, no docker client available", new IllegalStateException());
         }
         //check if docker host is available
-        if(dc.getHostAndSocketConfig().getSocket().isEmpty()){
+        if(dc.getHostAndSocketConfig().getHost().get().isEmpty()){
             throw new BuildpackException("Unable to connect to container runtime, no docker host available", new IllegalStateException());
         }
         //check if docker socket is available
-        if(dc.getHostAndSocketConfig().getSocket().isEmpty()){
+        if(dc.getHostAndSocketConfig().getSocket().get().isEmpty()){
             throw new BuildpackException("Unable to connect to container runtime, no docker socket available", new IllegalStateException());
         }
         log.info("Verifying connection to container runtime...");
