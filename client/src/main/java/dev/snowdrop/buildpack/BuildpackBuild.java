@@ -68,15 +68,38 @@ public class BuildpackBuild {
 
     }
 
+    private void verifyContainerRuntime(DockerConfig dc) {
+        //check if docker client is available
+        if(dc.getDockerClient() == null){
+            throw new BuildpackException("Unable to connect to container runtime, no docker client available", new IllegalStateException());
+        }
+        //check if docker host is available
+        if(dc.getHostAndSocketConfig().getSocket().isEmpty()){
+            throw new BuildpackException("Unable to connect to container runtime, no docker host available", new IllegalStateException());
+        }
+        //check if docker socket is available
+        if(dc.getHostAndSocketConfig().getSocket().isEmpty()){
+            throw new BuildpackException("Unable to connect to container runtime, no docker socket available", new IllegalStateException());
+        }
+        log.info("Verifying connection to container runtime...");
+        try{
+            dc.getDockerClient().pingCmd().exec();
+        }catch(Exception e){
+            throw new BuildpackException("Unable to verify containe runtime settings", e);
+        }
+    }
+
     public int build(){
 
         log.info("Buildpack build requested with config: \n"+
                  " - builder "+config.getBuilderImage().getCanonicalReference()+"\n"+
                  " - output "+config.getOutputImage().getReference()+"\n"+
                  " - logLevel "+config.getLogConfig().getLogLevel()+"\n"+
-                 " - dockerHost "+config.getDockerConfig().getDockerHost()+"\n"+
-                 " - dockerSocket "+config.getDockerConfig().getDockerSocket()+"\n"+
+                 " - dockerHost "+config.getDockerConfig().getHostAndSocketConfig().getHost().get()+"\n"+
+                 " - dockerSocket "+config.getDockerConfig().getHostAndSocketConfig().getSocket().get()+"\n"+
                  " - useDaemon "+config.getDockerConfig().getUseDaemon());
+
+        verifyContainerRuntime(config.getDockerConfig());
 
         log.info("Pulling Builder image");
 

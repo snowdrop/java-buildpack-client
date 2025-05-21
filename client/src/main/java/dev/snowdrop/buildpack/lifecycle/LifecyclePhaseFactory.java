@@ -93,7 +93,7 @@ public class LifecyclePhaseFactory {
                                     ));        
 
         if(dockerConfig.getUseDaemon())
-          binds.add(new VolumeBind(dockerConfig.getDockerSocket(), LifecyclePhaseFactory.DOCKER_SOCKET_PATH));
+          binds.add(new VolumeBind(dockerConfig.getHostAndSocketConfig().getSocket().get(), LifecyclePhaseFactory.DOCKER_SOCKET_PATH));
 
         // create a container using builderImage that will invoke the creator process
         String id = ContainerUtils.createContainer(dockerConfig.getDockerClient(), 
@@ -111,7 +111,7 @@ public class LifecyclePhaseFactory {
         log.debug("- mounted " + applicationVolume + " at " + WORKSPACE_VOL_PATH);
         log.debug("- mounted " + platformVolume + " at " + PLATFORM_VOL_PATH);
         if(dockerConfig.getUseDaemon())
-          log.debug("- mounted " + dockerConfig.getDockerSocket() + " at " + LifecyclePhaseFactory.DOCKER_SOCKET_PATH);
+          log.debug("- mounted " + dockerConfig.getHostAndSocketConfig().getSocket().get() + " at " + LifecyclePhaseFactory.DOCKER_SOCKET_PATH);
         log.debug("- mounted " + outputVolume + " at " + LAYERS_VOL_PATH);
         log.debug("- container id " + id);
         log.debug("- image reference "+builder.getImage().getCanonicalReference()); 

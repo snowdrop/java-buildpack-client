@@ -3,15 +3,19 @@ package dev.snowdrop.buildpack.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.dockerjava.api.DockerClient;
 
 import dev.snowdrop.buildpack.BuildpackException;
 import dev.snowdrop.buildpack.docker.DockerClientUtils;
-import dev.snowdrop.buildpack.docker.DockerClientUtils.HostAndSocket;
 import io.sundr.builder.annotations.Buildable;
 
 @Buildable(generateBuilderPackage=true, builderPackage="dev.snowdrop.buildpack.builder")
 public class DockerConfig {
+    private static final Logger log = LoggerFactory.getLogger(DockerConfig.class);
+
     public static DockerConfigBuilder builder() {
         return new DockerConfigBuilder();
     }
@@ -27,8 +31,7 @@ public class DockerConfig {
     private Integer pullRetryCount;
     private Integer pullRetryIncreaseSeconds;
     private PullPolicy pullPolicy;
-    private String dockerHost;
-    private String dockerSocket;
+    private HostAndSocketConfig hostAndSocketConfig;
     private String dockerNetwork;
     private Boolean useDaemon;
     private DockerClient dockerClient;
@@ -39,13 +42,15 @@ public class DockerConfig {
         Integer pullRetryCount,
         Integer pullRetryIncreaseSeconds,
         PullPolicy pullPolicy,
-        String dockerHost, 
-        String dockerSocket,
+        HostAndSocketConfig hostAndSocketConfig,
         String dockerNetwork,
         Boolean useDaemon, 
         DockerClient dockerClient,
         List<RegistryAuthConfig> authConfigs
     ){
+        log.debug("DockerConfig: pullTimeoutSeconds={}, pullRetryCount={}, pullRetryIncreaseSeconds={}, pullPolicy={}, hostAndSocketConfig={}, dockerNetwork={}, useDaemon={}", 
+            pullTimeoutSeconds, pullRetryCount, pullRetryIncreaseSeconds, pullPolicy, hostAndSocketConfig, dockerNetwork, useDaemon);  
+
         this.pullTimeoutSeconds = pullTimeoutSeconds != null ? Integer.max(0,pullTimeoutSeconds) : DEFAULT_PULL_TIMEOUT;
         this.pullRetryCount = pullRetryCount != null ? Integer.max(0,pullRetryCount) : DEFAULT_PULL_RETRY_COUNT;
         this.pullRetryIncreaseSeconds = pullRetryIncreaseSeconds != null ? Integer.max(0,pullRetryIncreaseSeconds) : DEFAULT_PULL_RETRY_INCREASE;
@@ -53,33 +58,16 @@ public class DockerConfig {
         this.dockerNetwork = dockerNetwork;
         this.useDaemon = useDaemon != null ? useDaemon : Boolean.TRUE; //default daemon to true for back compat.
 
-        //take config values, and determine values to use.. 
-        HostAndSocket hands = DockerClientUtils.probeContainerRuntime(new DockerClientUtils.HostAndSocket(dockerHost, dockerSocket));
-        this.dockerHost = hands.host;
-        this.dockerSocket = hands.socket;
+        //process host & socket passed, and probe runtime to fill in unset values.
+        setHostAndSocketConfig(hostAndSocketConfig);
 
         this.authConfigs = authConfigs == null ? new ArrayList<>() : authConfigs;
-
-        this.dockerClient = dockerClient != null ? dockerClient : DockerClientUtils.getDockerClient(hands, authConfigs);
-
-        try{
-            this.dockerClient.pingCmd().exec();
-        }catch(Exception e){
-            throw new BuildpackException("Unable to verify docker settings", e);
-        }
+        this.dockerClient = dockerClient;
+        
     }
 
-    public void setDockerHost(String dockerHost){
-        HostAndSocket hands = DockerClientUtils.probeContainerRuntime(new DockerClientUtils.HostAndSocket(dockerHost, this.dockerSocket));
-        this.dockerHost = hands.host;
-        this.dockerSocket = hands.socket;
-        this.dockerClient = dockerClient != null ? dockerClient : DockerClientUtils.getDockerClient(hands);        
-    }
-    public void setDockerSocket(String dockerSocket){
-        HostAndSocket hands = DockerClientUtils.probeContainerRuntime(new DockerClientUtils.HostAndSocket(this.dockerHost, dockerSocket));
-        this.dockerHost = hands.host;
-        this.dockerSocket = hands.socket;
-        this.dockerClient = dockerClient != null ? dockerClient : DockerClientUtils.getDockerClient(hands);
+    public void setHostAndSocketConfig(HostAndSocketConfig hostAndSocketConfig) {
+        this.hostAndSocketConfig = DockerClientUtils.probeContainerRuntime(hostAndSocketConfig);
     }
 
     public Integer getPullTimeoutSeconds(){
@@ -98,12 +86,8 @@ public class DockerConfig {
         return this.pullPolicy;
     }
 
-    public String getDockerHost(){
-        return this.dockerHost;
-    }
-
-    public String getDockerSocket(){
-        return this.dockerSocket;
+    public HostAndSocketConfig getHostAndSocketConfig(){
+        return this.hostAndSocketConfig;
     }
 
     public String getDockerNetwork(){
@@ -111,6 +95,7 @@ public class DockerConfig {
     }
 
     public DockerClient getDockerClient(){
+        this.dockerClient = this.dockerClient != null ? this.dockerClient : DockerClientUtils.getDockerClient(this.hostAndSocketConfig, this.authConfigs);
         return this.dockerClient;
     }
 

@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.snowdrop.buildpack.config.RegistryAuthConfig;
+import dev.snowdrop.buildpack.config.HostAndSocketConfig;
 import dev.snowdrop.buildpack.utils.OperatingSytem;
 
 import com.github.dockerjava.api.DockerClient;
@@ -34,7 +35,7 @@ public class DockerClientUtils {
     return getDockerClient(probeContainerRuntime(null));
   }
 
-  public static DockerClient getDockerClient(HostAndSocket runtimeInfo) {
+  public static DockerClient getDockerClient(HostAndSocketConfig runtimeInfo) {
     return getDockerClient(runtimeInfo, new ArrayList<RegistryAuthConfig>(){});
   }
 
@@ -42,16 +43,15 @@ public class DockerClientUtils {
    * Simple util to get a DockerClient for the platform. probably needs more work
    * for other platforms, and we may want a way to configure authentication etc.
    */
-  public static DockerClient getDockerClient(HostAndSocket runtimeInfo, List<RegistryAuthConfig> authConfigs) {
-    if (runtimeInfo == null || runtimeInfo.host == null || runtimeInfo.host.isEmpty() ||
-                               runtimeInfo.socket == null || runtimeInfo.socket.isEmpty()) {
+  public static DockerClient getDockerClient(HostAndSocketConfig runtimeInfo, List<RegistryAuthConfig> authConfigs) {
+    if(runtimeInfo == null || !runtimeInfo.getHost().isPresent() || !runtimeInfo.getSocket().isPresent()) {
       log.warn("Supplied host/socket was null, attempting to use auto-configured defaults");
       return getDockerClient(probeContainerRuntime(runtimeInfo), authConfigs);
     }
 
-    log.debug("Using dockerhost " + runtimeInfo.host);
+    log.debug("Using dockerhost " + runtimeInfo.getHost().get());
     DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-        .withDockerHost(runtimeInfo.host)
+        .withDockerHost(runtimeInfo.getHost().get())
         .build();
 
     AuthDelegatingDockerClientConfig addcc = new AuthDelegatingDockerClientConfig(config);
@@ -67,55 +67,41 @@ public class DockerClientUtils {
     return dockerClient;
   }
 
-  public static class HostAndSocket {
-    public String host;
-    public String socket;
-    public HostAndSocket(String host, String socket){
-      this.host = host; this.socket = socket;
-    }
-    public HostAndSocket(String host){
-      this.host = host;
-      this.socket = null;
-    }
-  }
-
-  public static HostAndSocket probeContainerRuntime(HostAndSocket overrides) {
+  public static HostAndSocketConfig probeContainerRuntime(HostAndSocketConfig overrides) {
+    log.debug("Probing for container runtime... "+(overrides!=null ? "H:"+overrides.getHost()+" S:"+overrides.getSocket() : "no overrides"));
     if(overrides!=null){
       //if user has supplied both host & socket, we don't need to probe at all, use their values.
       //(using isEmpty as isBlank is jdk11 onwards)
-      if(overrides.host!=null && overrides.socket!=null && !overrides.host.isEmpty() && !overrides.socket.isEmpty()){
-        return overrides;
+      if(overrides.getHost().isPresent() && overrides.getSocket().isPresent()){
+        return new HostAndSocketConfig(overrides.getHost().get(),overrides.getSocket().get());  
       }
-
-      //sanitize blank/empty values to null. (also using isEmpty because isBlank is only from jdk11 onwards)
-      if(overrides.host!=null && overrides.host.isEmpty()){
-        overrides.host=null;
-      }
-      if(overrides.socket!=null && overrides.socket.isEmpty()){
-        overrides.socket=null;
-      }
-    }else{
-      //no overrides at all? make an empty one.
-      overrides = new HostAndSocket(null, null);
     }
 
     try{
       //configure the override values as Optionals.
-      Optional<String> dockerHost = Optional.ofNullable(overrides.host);
+      Optional<String> dockerHost = overrides==null ? Optional.empty() : overrides.getHost();
       //for dockerhost, if user override was null, try to honor the env var
       if(!dockerHost.isPresent()){
         dockerHost = Optional.ofNullable(System.getenv("DOCKER_HOST"));
       }
-      Optional<String> dockerSocket = Optional.ofNullable(overrides.socket);
+      Optional<String> dockerSocket = overrides==null ? Optional.empty() : overrides.getSocket();
+
+      //if we now have a host & socket, we are done.
+      if(dockerHost.isPresent() && dockerSocket.isPresent()){
+        log.debug("Using docker host "+dockerHost.get()+" and socket "+dockerSocket.get());
+        return new HostAndSocketConfig(dockerHost.get(),dockerSocket.get());
+      }
 
       //if dockerhost is specified, but docker socket is not, test if dockerhost is podman rootful,
       //and autoconfigure dockersocket.. otherwise invoking podman as the user may result in the 
       //user socket being selected for use with the rootful host, leading to failure.
       if ( dockerHost.isPresent() && !dockerSocket.isPresent() && 
          ( "unix:///var/run/podman/podman.sock".equals(dockerHost.get()) || "unix:///run/podman/podman.sock".equals(dockerHost.get()) )){
-        return new HostAndSocket(dockerHost.get(), dockerHost.get().substring("unix://".length()));
+        log.debug("Using podman rootful host "+dockerHost.get()+" and socket "+dockerHost.get().substring("unix://".length()));
+        return new HostAndSocketConfig(dockerHost.get(), dockerHost.get().substring("unix://".length()));
       }
 
+      //we are still missing a host or socket, so we need to probe for them.
       //try to obtain podman socket path.. 
       log.info("Testing for podman/docker...");
       DockerClientUtils.CmdResult cr = DockerClientUtils.start(PODMAN_SOCKET);
@@ -124,40 +110,41 @@ public class DockerClientUtils {
         String socket = cr.output.get(0);
         if(socket.startsWith("unix://")){
           socket = socket.substring("unix://".length());
-        }        
+        }
+        log.debug("Using derived socket path value of "+socket+" from podman cli invocation.");
         //podman was present, use podman to retrieve dockerhost value
         switch (OperatingSytem.getOperationSystem()) {
           case WIN:{
             DockerClientUtils.CmdResult scmd = DockerClientUtils.start(WIN_PODMAN_HOST);
             if(scmd.rc==0){
-              String fixedhost = scmd.output.get(0).replaceAll("\\", "/");
-              return new HostAndSocket(dockerHost.orElse(fixedhost), dockerSocket.orElse(cr.output.get(0)));
+              String fixedhost = scmd.output.get(0).replaceAll("\\\\", "/");
+              return new HostAndSocketConfig(dockerHost.orElse(fixedhost), dockerSocket.orElse(socket));
             }else{
               log.warn("Unable to obtain podman socket path from podman, using internal default");
-              return new HostAndSocket(dockerHost.orElse("npipe:////./pipe/docker_engine"),dockerSocket.orElse("/var/run/docker.sock"));
+              return new HostAndSocketConfig(dockerHost.orElse("npipe:////./pipe/docker_engine"),dockerSocket.orElse("/var/run/docker.sock"));
             }
           }
           case LINUX:{
             DockerClientUtils.CmdResult scmd = DockerClientUtils.start(LIN_PODMAN_HOST);
             if(scmd.rc==0){
-              return new HostAndSocket(dockerHost.orElse(scmd.output.get(0)), dockerSocket.orElse(socket));
+              return new HostAndSocketConfig(dockerHost.orElse(scmd.output.get(0)), dockerSocket.orElse(socket));
             }else{
               log.warn("Unable to obtain podman socket path from podman, using internal default");
-              return new HostAndSocket(dockerHost.orElse("unix:///var/run/podman.sock"), dockerSocket.orElse("/var/run/podman.sock"));
+              return new HostAndSocketConfig(dockerHost.orElse("unix:///var/run/podman.sock"), dockerSocket.orElse("/var/run/podman.sock"));
             }
           }
           case MAC:{
             DockerClientUtils.CmdResult scmd = DockerClientUtils.start(MAC_PODMAN_HOST);
             if(scmd.rc==0){
-              return new HostAndSocket(dockerHost.orElse(scmd.output.get(0)), dockerSocket.orElse(socket));
+              return new HostAndSocketConfig(dockerHost.orElse(scmd.output.get(0)), dockerSocket.orElse(socket));
             }else{
               log.warn("Unable to obtain podman socket path from podman, using internal default");
-              return new HostAndSocket(dockerHost.orElse("unix:///var/run/podman.sock"), dockerSocket.orElse("/var/run/podman.sock"));
+              return new HostAndSocketConfig(dockerHost.orElse("unix:///var/run/podman.sock"), dockerSocket.orElse("/var/run/podman.sock"));
             }
           }
           case UNKNOWN:{
             log.warn("Unable to identify Operating System, you may need to specify docker host / docker socket manually");
-            return new HostAndSocket(dockerHost.orElse("unix:///var/run/podman.sock"), dockerSocket.orElse("/var/run/podman.sock"));
+            return new HostAndSocketConfig(dockerHost.orElse("unix:///var/run/podman.sock"), dockerSocket.orElse("/var/run/podman.sock"));
           }
         }
       }else{
@@ -165,17 +152,17 @@ public class DockerClientUtils {
         //failed to obtain podman socket path, assuming docker.. 
         switch (OperatingSytem.getOperationSystem()) {
           case WIN:{
-            return new HostAndSocket(dockerHost.orElse("npipe:////./pipe/docker_engine"),dockerSocket.orElse("/var/run/docker.sock"));
+            return new HostAndSocketConfig(dockerHost.orElse("npipe:////./pipe/docker_engine"),dockerSocket.orElse("/var/run/docker.sock"));
           }
           case LINUX:{
-            return new HostAndSocket(dockerHost.orElse("unix:///var/run/docker.sock"), dockerSocket.orElse("/var/run/docker.sock"));
+            return new HostAndSocketConfig(dockerHost.orElse("unix:///var/run/docker.sock"), dockerSocket.orElse("/var/run/docker.sock"));
           }
           case MAC:{
-            return new HostAndSocket(dockerHost.orElse("unix:///var/run/docker.sock"), dockerSocket.orElse("/var/run/docker.sock"));
+            return new HostAndSocketConfig(dockerHost.orElse("unix:///var/run/docker.sock"), dockerSocket.orElse("/var/run/docker.sock"));
           }
           case UNKNOWN:{
             log.warn("Unable to identify Operating System, you may need to specify docker host / docker socket manually");
-            return new HostAndSocket(dockerHost.orElse("unix:///var/run/docker.sock"), dockerSocket.orElse("/var/run/docker.sock"));
+            return new HostAndSocketConfig(dockerHost.orElse("unix:///var/run/docker.sock"), dockerSocket.orElse("/var/run/docker.sock"));
           }
         }
       }
