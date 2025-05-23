@@ -61,7 +61,7 @@ public class RunTest {
 
       String projectPath = Optional.ofNullable(System.getenv("PROJECT_PATH")).orElse(".");
       String JDK = Optional.ofNullable(System.getenv("JDK")).orElse("17");
-      String builderImage = Optional.ofNullable(System.getenv("BUILDER_IMAGE")).orElse("quay.io/ozzydweller/testbuilders:debug-exporter");
+      String builderImage = Optional.ofNullable(System.getenv("BUILDER_IMAGE")).orElse("docker.io/paketocommunity/builder-ubi-base:latest");
       String outputImage = Optional.ofNullable(System.getenv("OUTPUT_IMAGE")).orElse("snowdrop/hello-quarkus:jvm"+JDK);
 
       System.out.println("RunTest Building path '"+projectPath+"' using '"+builderImage+"' requesting jdk '"+JDK+"'");

@@ -22,7 +22,7 @@ public class pack {
         HashMap<String,String> env = new HashMap<>();
 
         int exitCode = BuildConfig.builder()
-                           .withBuilderImage(new ImageReference("docker.io/paketocommunity/builder-ubi-base"))             
+                           .withBuilderImage(new ImageReference("docker.io/paketocommunity/builder-ubi-base:latest"))             
                            .withOutputImage(new ImageReference("snowdrop/hello-spring"))
                            .withNewLogConfig()
                                 .withLogger(new SystemLogger())

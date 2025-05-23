@@ -48,8 +48,7 @@ public class pack {
       envMap.put("BP_JVM_VERSION",JDK);
 
       int exitCode = BuildConfig.builder()
-                           //.withBuilderImage(new ImageReference("docker.io/paketocommunity/builder-ubi-base"))
-                           .withBuilderImage(new ImageReference("quay.io/ozzydweller/testbuilders:paketo-default"))
+                           .withBuilderImage(new ImageReference("docker.io/paketocommunity/builder-ubi-base:latest"))
                            .withOutputImage(new ImageReference("snowdrop/hello-quarkus:jvm"+JDK))
                            .withNewDockerConfig()
                               .withPullPolicy(DockerConfig.PullPolicy.IF_NOT_PRESENT)
