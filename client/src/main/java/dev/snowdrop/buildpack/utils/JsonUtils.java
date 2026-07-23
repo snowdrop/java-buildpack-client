@@ -12,14 +12,23 @@ public class JsonUtils {
             path = path.substring(1);
         }
         String[] parts = path.split("/");
-        JsonNode next = root.get(parts[0]);
+        JsonNode next = null;
+        if(!root.isArray()){
+          next = root.get(parts[0]);
+        }else{
+          try{
+            next = root.get(Integer.parseInt(parts[0]));  
+          }catch(NumberFormatException nfe){
+            throw new IllegalArgumentException("Invalid path, expected array index but got: "+parts[0]+" for path: "+path);
+          }
+        }
         if (next != null && parts.length > 1) {
           return getValue(next, path.substring(path.indexOf("/") + 1));
         }
         if (next == null) {
           return null;
-        }
-        return next.asText();
+        }   
+        return next.asText();       
       }
    public static List<String> getArray(JsonNode root, String path) {
         if (path.startsWith("/")) {

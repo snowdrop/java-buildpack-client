@@ -187,14 +187,19 @@ public class BuilderImage {
 
             // if caller did not set runImage, and metadata is absent, error.
             if(ri==null){
-                throw new Exception("No runImage specified, and builderImage is missing metadata declaration");
+                throw new Exception("No runImage specified, and builderImage is missing metadata declaration :: "+this.metadataJson);
             }
 
-            // remap docker.io references back to docker.io
-            // if (ri.startsWith("index.docker.io/")) {
-            //     ri = ri.substring("index.docker.io/".length());
-            //     ri = "docker.io/" + ri;
-            // }
+            //first observed with ubi9 builder, stack/runImage/image is empty string
+            //image is present in the images array, so fallback to that.
+            if(ri.trim().isEmpty()){
+                //fallback to looking for runImage in the images array.. 
+                String fbImg = JsonUtils.getValue(root, "images/0/image");
+                if(fbImg==null || fbImg.trim().isEmpty()){
+                    throw new Exception("No runImage specified, and builderImage is missing metadata declaration :: (fbImage:"+fbImg+") "+this.metadataJson);
+                }
+                ri = fbImg;
+            }
             
             return new ImageReference(ri);
         } catch (Exception e) {
